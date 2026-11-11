@@ -6,6 +6,15 @@
     "description": "Crée et maintient une collection par genre (Horreur, Comédie...) pour les films et les séries, et ajoute sur l'écran d'accueil des rangées Nouveaux films, Séries avec de nouveaux épisodes, Collections par genre et une rangée par genre, sans ajouter de CSS.",
     "owner": "JohannDeon",
     "category": "General",
-    "versions": []
+    "versions": [
+      {
+        "version": "1.0.0.0",
+        "changelog": "Voir https://github.com/JohannDeon/jellyfin-plugin-genre-collections/releases/tag/v1.0.0",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/JohannDeon/jellyfin-plugin-genre-collections/releases/download/v1.0.0/genre-collections_1.0.0.0.zip",
+        "checksum": "05a1dcd4002b9b9bbfe6660c634f315f",
+        "timestamp": "2026-11-11T17:39:06Z"
+      }
+    ]
   }
 ]
