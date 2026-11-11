@@ -14,4 +14,4 @@ owner: "JohannDeon"
 artifacts:
 - "Jellyfin.Plugin.GenreCollections.dll"
 changelog: >
-  Séries rangées entières dans leur genre principal ; plus d'épisodes ni de titres absents du serveur dans les rangées ; collections vides masquées ; bouton pour supprimer toutes les collections créées.
+  Chaque film et série va dans un seul genre, le plus pertinent (priorité des genres réglable) ; affiche des collections tirée de leurs titres ; plus de collections dans « Nouveaux films » ; plus d'épisodes ni de titres absents dans les rangées ; collections vides masquées ; bouton pour supprimer toutes les collections créées.

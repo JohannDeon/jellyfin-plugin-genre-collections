@@ -37,7 +37,15 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether a movie goes in a single genre collection (its main genre) instead of one per genre.
     /// </summary>
-    public bool SingleGenrePerMovie { get; set; }
+    public bool SingleGenrePerMovie { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the genre priority used to pick the main genre of a title (one per line, most specific first).
+    /// A title goes in the first genre of this list it has; titles with none of them keep their first metadata genre.
+    /// </summary>
+    public string GenrePriority { get; set; } =
+        "Animation\nDocumentaire\nHorreur\nScience-Fiction\nFantastique\nWestern\nGuerre\nFamilial\nMusique\n" +
+        "Thriller\nCrime\nMystère\nAction\nAventure\nComédie\nRomance\nHistoire\nDrame";
 
     /// <summary>
     /// Gets or sets the name format of a mixed collection. {0} is the genre.

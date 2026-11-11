@@ -118,3 +118,22 @@ public class GenreAssignmentTests
         Assert.Equal(new[] { "all:drame" }, result.Keys);
     }
 }
+
+public class GenrePriorityTests
+{
+    [Fact]
+    public void PriorityGenreComesFirst()
+    {
+        var c = new PluginConfiguration();
+        var rules = new GenreRules(c.GenreAliases, c.ExcludedGenres, c.GenrePriority);
+        Assert.Equal("Horreur", rules.OrderByRelevance(new[] { "Drame", "Horreur" })[0]);
+        Assert.Equal("Animation", rules.OrderByRelevance(new[] { "Comédie", "Familial", "Animation" })[0]);
+    }
+
+    [Fact]
+    public void UnknownGenresKeepMetadataOrderAfterKnownOnes()
+    {
+        var rules = new GenreRules(null, null, "Horreur");
+        Assert.Equal(new[] { "Horreur", "Kung-fu", "Policier" }, rules.OrderByRelevance(new[] { "Kung-fu", "Policier", "Horreur" }));
+    }
+}

@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="Genre Collections" width="640"></p>
+
 <h1 align="center">Genre Collections pour Jellyfin</h1>
 
 <p align="center">
@@ -17,7 +19,7 @@
 
 Genre Collections range automatiquement tes **films et séries en collections par genre** (Horreur, Comédie, Action, Animation…) et ajoute sur l'**écran d'accueil** des rangées pour retrouver tes nouveautés et tes contenus sans fouiller dans les dossiers.
 
-- **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Les séries y sont rangées entières (jamais épisode par épisode), et par défaut dans leur genre principal uniquement. Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
+- **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Chaque film et chaque série entière (jamais épisode par épisode) va dans **un seul genre**, le plus pertinent, et l'affiche de la collection est celle d'un de ses titres. Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
 - **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Collections par genre » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
 - **Compatible avec ton thème** : aucun CSS ajouté. Les rangées reprennent le style de ton thème (Abyss, etc.) comme les rangées natives.
 
@@ -75,8 +77,9 @@ Les mises à jour apparaissent ensuite automatiquement dans le catalogue.
 | --- | --- | --- |
 | Créer et mettre à jour les collections | Activé | Active ou coupe la gestion des collections |
 | Inclure les films / les séries | Activé / Activé | Types de contenus rangés |
-| Une seule collection par série | Activé | La série entière va uniquement dans son genre principal (le premier de ses métadonnées) |
-| Une seule collection par film | Désactivé | Même principe pour les films |
+| Une seule collection par série | Activé | La série entière va uniquement dans son genre le plus pertinent |
+| Une seule collection par film | Activé | Même principe pour les films |
+| Priorité des genres | Animation, Documentaire, Horreur, Science-Fiction, Fantastique, Western, Guerre, Familial, Musique, Thriller, Crime, Mystère, Action, Aventure, Comédie, Romance, Histoire, Drame | Choisit le genre le plus pertinent : le premier de la liste que possède le titre (un film « Drame, Horreur » va dans Horreur) |
 | Séparer films et séries | Désactivé | Une collection mixte, ou deux par genre |
 | Nom d'une collection mixte | `{0}` | `{0}` est remplacé par le genre |
 | Nom d'une collection de films / de séries | `{0} (Films)` / `{0} (Séries)` | Utilisés si films et séries sont séparés |

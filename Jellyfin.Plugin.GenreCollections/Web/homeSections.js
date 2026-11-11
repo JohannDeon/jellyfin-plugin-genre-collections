@@ -112,6 +112,8 @@
             ImageTypeLimit: 1,
             EnableImageTypes: 'Primary',
             EnableTotalRecordCount: false,
+            // Never replace movies by the collections they belong to ("group movies into collections" setting)
+            CollapseBoxSetItems: false,
             // Only titles really present on the server (no placeholders / missing items)
             IsMissing: false,
             LocationTypes: 'FileSystem,Remote'

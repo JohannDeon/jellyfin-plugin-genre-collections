@@ -97,7 +97,7 @@ public class GenreCollectionService
 
     private async Task SyncInternalAsync(PluginConfiguration config, IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var rules = new GenreRules(config.GenreAliases, config.ExcludedGenres);
+        var rules = new GenreRules(config.GenreAliases, config.ExcludedGenres, config.GenrePriority);
         var desired = BuildDesiredCollections(config, rules);
         progress.Report(10);
 
@@ -129,9 +129,11 @@ public class GenreCollectionService
             }
             else
             {
-                await CreateCollectionAsync(key, target).ConfigureAwait(false);
+                boxSet = await CreateCollectionAsync(key, target).ConfigureAwait(false);
                 created++;
             }
+
+            await EnsureLockedWithPosterAsync(boxSet, target, cancellationToken).ConfigureAwait(false);
 
             done++;
             progress.Report(10 + (80.0 * done / Math.Max(1, desired.Count)));
@@ -184,7 +186,8 @@ public class GenreCollectionService
                     continue;
                 }
 
-                var genres = rules.Normalize(item.Genres).ToList();
+                var normalized = rules.Normalize(item.Genres);
+                var genres = singleGenre ? rules.OrderByRelevance(normalized) : normalized.ToList();
                 if (genres.Count > 0)
                 {
                     candidates.Add(new GenreCandidate(item.Id, scope, genres, singleGenre));
@@ -276,14 +279,63 @@ public class GenreCollectionService
         }
     }
 
-    private async Task CreateCollectionAsync(string key, TargetCollection target)
+    /// <summary>
+    /// Locks the collection so internet metadata providers (TMDb collections) never give it an unrelated
+    /// name or poster, and uses the poster of one of its own titles (the best rated one) as its image.
+    /// </summary>
+    private async Task EnsureLockedWithPosterAsync(BoxSet boxSet, TargetCollection target, CancellationToken cancellationToken)
+    {
+        var changed = false;
+        if (!boxSet.IsLocked)
+        {
+            boxSet.IsLocked = true;
+            changed = true;
+        }
+
+        var cover = target.ItemIds
+            .Select(id => _libraryManager.GetItemById(id))
+            .Where(item => item is not null && item.HasImage(ImageType.Primary, 0))
+            .OrderByDescending(item => item!.CommunityRating ?? 0)
+            .ThenByDescending(item => item!.DateCreated)
+            .FirstOrDefault();
+
+        if (cover is not null)
+        {
+            var image = cover.GetImageInfo(ImageType.Primary, 0);
+            var current = boxSet.HasImage(ImageType.Primary, 0) ? boxSet.GetImageInfo(ImageType.Primary, 0) : null;
+            var stillValid = current is not null
+                && target.ItemIds.Any(id => string.Equals(_libraryManager.GetItemById(id)?.GetImageInfo(ImageType.Primary, 0)?.Path, current.Path, StringComparison.Ordinal));
+            if (!stillValid)
+            {
+                boxSet.SetImage(
+                    new ItemImageInfo
+                    {
+                        Path = image.Path,
+                        Type = ImageType.Primary,
+                        DateModified = image.DateModified,
+                        Width = image.Width,
+                        Height = image.Height,
+                        BlurHash = image.BlurHash
+                    },
+                    0);
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await boxSet.UpdateToRepositoryAsync(ItemUpdateType.ImageUpdate, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<BoxSet> CreateCollectionAsync(string key, TargetCollection target)
     {
         _logger.LogInformation("Creating genre collection {Name} with {Count} items", target.Name, target.ItemIds.Count);
 
         var options = new CollectionCreationOptions
         {
             Name = target.Name,
-            IsLocked = false,
+            IsLocked = true,
             ItemIdList = target.ItemIds.Select(id => id.ToString("N", CultureInfo.InvariantCulture)).ToArray()
         };
         options.ProviderIds[Plugin.ProviderKey] = key;
@@ -296,6 +348,8 @@ public class GenreCollectionService
             boxSet.LockedFields = [.. boxSet.LockedFields, MetadataField.Name];
             await boxSet.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).ConfigureAwait(false);
         }
+
+        return boxSet;
     }
 
     private async Task<bool> UpdateCollectionAsync(BoxSet boxSet, TargetCollection target, CancellationToken cancellationToken)
