@@ -1,9 +1,8 @@
-name: Build
+name: Build & Release
 
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
 
 permissions:
@@ -12,8 +11,12 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Skip the commit that only updates manifest.json
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -22,13 +25,19 @@ jobs:
       - name: Version
         id: version
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            v="${GITHUB_REF#refs/tags/v}"
+          base="$(grep -Po '^version: "\K[^"]+' build.yaml | cut -d. -f1-3)"
+          last="$(git tag --list 'v*' --sort=-v:refname | head -n1)"
+          if [ -z "$last" ]; then
+            v="$base"
           else
-            v="$(grep -Po '^version: "\K[^"]+' build.yaml | cut -d. -f1-3)"
+            IFS=. read -r ma mi pa <<< "${last#v}"
+            v="$ma.$mi.$((pa + 1))"
+            # A higher version in build.yaml wins (manual minor/major bump)
+            if [ "$(printf '%s\n%s\n' "$v" "$base" | sort -V | tail -n1)" = "$base" ] && [ "$base" != "${last#v}" ]; then v="$base"; fi
           fi
           echo "short=$v" >> "$GITHUB_OUTPUT"
           echo "full=$v.0" >> "$GITHUB_OUTPUT"
+          echo "Version: $v"
 
       - name: Test
         run: dotnet test -c Release
@@ -52,23 +61,27 @@ jobs:
           path: artifacts/*.zip
 
       - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.version.outputs.short }}
+          name: v${{ steps.version.outputs.short }}
+          target_commitish: ${{ github.sha }}
           files: artifacts/*.zip
           generate_release_notes: true
 
       - name: Update plugin repository manifest
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
+          tag="v${{ steps.version.outputs.short }}"
           zip="artifacts/genre-collections_${{ steps.version.outputs.full }}.zip"
-          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/$(basename "$zip")"
+          url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${tag}/$(basename "$zip")"
           abi="$(grep -Po '^targetAbi: "\K[^"]+' build.yaml)"
           git fetch origin main
           git checkout -B main origin/main
-          python3 .github/scripts/update_manifest.py manifest.json "$zip" "${{ steps.version.outputs.full }}" "$abi" "$url" "Voir https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}"
+          python3 .github/scripts/update_manifest.py manifest.json "$zip" "${{ steps.version.outputs.full }}" "$abi" "$url" "Voir https://github.com/${GITHUB_REPOSITORY}/releases/tag/${tag}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add manifest.json
-          git commit -m "Manifest: ${GITHUB_REF_NAME}"
+          git commit -m "Manifest: ${tag} [skip ci]"
           git push origin main

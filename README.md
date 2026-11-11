@@ -13,69 +13,33 @@
 
 ---
 
-## Sommaire
+## C'est quoi ?
 
-- [Fonctionnalités](#fonctionnalités)
-- [Compatibilité](#compatibilité)
-- [Installation](#installation)
-- [Premiers pas](#premiers-pas)
-- [Configuration](#configuration)
-- [Questions fréquentes](#questions-fréquentes)
-- [Désinstallation](#désinstallation)
-- [Développement](#développement)
-- [Licence](#licence)
+Genre Collections range automatiquement tes **films et séries en collections par genre** (Horreur, Comédie, Action, Animation…) et ajoute sur l'**écran d'accueil** des rangées pour retrouver tes nouveautés et tes contenus sans fouiller dans les dossiers.
 
-## Fonctionnalités
+- **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
+- **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Collections par genre » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
+- **Compatible avec ton thème** : aucun CSS ajouté. Les rangées reprennent le style de ton thème (Abyss, etc.) comme les rangées natives.
 
-### Collections par genre
-
-- Crée **une collection par genre** (Horreur, Comédie, Action, Animation…) à partir des genres de tes films et séries.
-- Les collections se **mettent à jour toutes seules** : après chaque scan de bibliothèque, et chaque nuit à 4h.
-- Les genres des séries TMDb sont **harmonisés avec ceux des films**. Par exemple, « Action & Adventure » est rangé dans Action et dans Aventure.
-- Tu choisis : collections mixtes films + séries, ou séparées (« Horreur (Films) » / « Horreur (Séries) »).
-- Tu peux exclure des genres, fixer un nombre minimum de titres par genre et changer le format des noms.
-- **Tes collections créées à la main ne sont jamais modifiées.**
-
-### Écran d'accueil
-
-Ces rangées s'ajoutent à l'accueil, au-dessus ou en dessous des rangées habituelles de Jellyfin :
-
-| Rangée | Contenu |
-| --- | --- |
-| Nouveaux films | Les derniers films ajoutés, toutes bibliothèques confondues |
-| Séries avec de nouveaux épisodes | Les séries qui viennent de recevoir des épisodes |
-| Collections par genre | Accès direct à chaque collection de genre |
-| Une rangée par genre | Au choix : aléatoire, derniers ajoutés, mieux notés ou plus récents |
-
-### Compatible avec les thèmes
-
-Le plugin **n'ajoute aucun CSS**. Les rangées utilisent les mêmes éléments que les rangées natives de Jellyfin, donc ton thème (par exemple **Abyss**) les habille comme le reste de l'interface.
-
-## Compatibilité
-
-| Plugin | Jellyfin |
-| --- | --- |
-| 1.x | 12.x |
-
-Les rangées d'accueil s'affichent dans le **client web** : navigateur, Jellyfin Media Player, et les applications Android et iOS qui utilisent le client web. Les clients natifs (Android TV, Swiftfin, Infuse…) affichent les collections, mais pas les rangées.
+Fonctionne avec **Jellyfin 12.x**.
 
 ## Installation
 
-### Méthode 1 : dépôt de plugins (recommandée)
-
-1. Dans Jellyfin, ouvre **Tableau de bord → Extensions → Dépôts** (onglet *Catalogue*, puis l'icône des paramètres selon la version).
-2. Clique sur **+** et ajoute :
-   - **Nom** : `Genre Collections`
-   - **URL** :
-     ```
-     https://raw.githubusercontent.com/JohannDeon/jellyfin-plugin-genre-collections/main/manifest.json
-     ```
-3. Va dans **Catalogue**, trouve **Genre Collections** et clique sur **Installer**.
-4. **Redémarre Jellyfin.**
+1. Dans Jellyfin, va dans `Tableau de bord -> Extensions -> Catalogue -> icône engrenage (en haut)` et ajoute un dépôt.
+1. Nom du dépôt : `Genre Collections`
+1. URL du dépôt :
+   ```
+   https://raw.githubusercontent.com/JohannDeon/jellyfin-plugin-genre-collections/main/manifest.json
+   ```
+1. Clique sur **Enregistrer**.
+1. Retourne dans **Catalogue** et cherche **Genre Collections**.
+1. Clique dessus, puis sur **Installer**.
+1. **Redémarre Jellyfin.**
 
 Les mises à jour apparaissent ensuite automatiquement dans le catalogue.
 
-### Méthode 2 : installation manuelle
+<details>
+<summary>Installation manuelle (sans le catalogue)</summary>
 
 1. Télécharge le zip de la [dernière release](../../releases/latest).
 2. Décompresse `Jellyfin.Plugin.GenreCollections.dll` dans un dossier `GenreCollections` du répertoire des plugins :
@@ -87,16 +51,21 @@ Les mises à jour apparaissent ensuite automatiquement dans le catalogue.
    | Windows | `%LOCALAPPDATA%\jellyfin\plugins\GenreCollections\` |
    | macOS | `~/.local/share/jellyfin/plugins/GenreCollections/` |
 
-3. **Redémarre Jellyfin.**
+3. Redémarre Jellyfin.
+</details>
 
-## Premiers pas
+## Guide d'utilisation
 
-1. Ouvre **Tableau de bord → Extensions → Genre Collections**.
-2. Règle les options si besoin, puis clique sur **Enregistrer**.
-3. Clique sur **Synchroniser maintenant** (ou lance un scan de bibliothèque).
-4. Les collections apparaissent dans ta bibliothèque **Collections**, et les nouvelles rangées sur l'accueil. Si l'accueil ne change pas, recharge la page (Ctrl + F5).
-
-La synchronisation est aussi disponible dans **Tableau de bord → Tâches planifiées → Genre Collections**.
+1. Va dans `Tableau de bord -> Extensions -> Mes extensions -> Genre Collections -> Paramètres`.
+1. Choisis ce que tu veux ranger : films, séries, ou les deux, en collections mixtes ou séparées (« Horreur (Films) » / « Horreur (Séries) »).
+1. Si besoin, ajoute des **genres exclus** (un par ligne) et des **alias** pour fusionner des genres :
+    - `Science Fiction=Science-Fiction` : fusionne deux orthographes
+    - `Action & Adventure=Action,Aventure` : découpe un genre de série en deux
+1. Dans la partie **Écran d'accueil**, choisis les rangées à afficher, leur position (au-dessus ou en dessous de « Reprendre » / « À suivre ») et les genres à mettre en premier.
+1. Clique sur **Enregistrer**.
+1. Clique sur **Synchroniser maintenant**.
+1. Et voilà ! Tes collections apparaissent dans la bibliothèque **Collections**, et les nouvelles rangées sur l'accueil. Si l'accueil ne change pas, recharge la page (Ctrl + F5).
+1. À noter : la tâche **Mettre à jour les collections par genre** est aussi disponible dans `Tableau de bord -> Tâches planifiées`.
 
 ## Configuration
 
@@ -185,11 +154,13 @@ Non. Le plugin ne gère que les collections qu'il a créées. Elles portent un i
 1. **Tableau de bord → Extensions → Genre Collections → Désinstaller**, puis redémarre Jellyfin. La ligne ajoutée à `index.html` est retirée à l'arrêt du serveur.
 2. Les collections de genre restent. Pour les retirer, supprime-les depuis la bibliothèque **Collections**.
 
-## Développement
+## Compilation
 
-Il faut le [SDK .NET 10](https://dotnet.microsoft.com/download).
+1. Clone ce dépôt.
+1. Installe le [SDK .NET 10](https://dotnet.microsoft.com/download).
+1. Compile le plugin :
 
-```bash
+```sh
 dotnet test
 dotnet publish Jellyfin.Plugin.GenreCollections -c Release -o artifacts
 ```
@@ -206,7 +177,13 @@ Jellyfin.Plugin.GenreCollections/
 tests/               # Tests unitaires
 ```
 
-**Publier une version** : pousse un tag, par exemple `git tag v1.0.0 && git push origin v1.0.0`. Le workflow GitHub Actions compile, publie la release avec le zip et met à jour `manifest.json`, donc la nouvelle version apparaît dans le catalogue Jellyfin.
+## Publication
+
+Les releases sont automatiques. Il suffit de fusionner sur `main`, et GitHub Actions :
+- incrémente la version de correctif à partir du dernier tag (pour une version mineure ou majeure, change `version` dans `build.yaml`) ;
+- compile le plugin avec ce numéro de version ;
+- crée une release GitHub avec le zip ;
+- met à jour `manifest.json` sur `main`, pour que la nouvelle version apparaisse dans le catalogue Jellyfin.
 
 ## Licence
 
