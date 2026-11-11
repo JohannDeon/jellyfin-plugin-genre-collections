@@ -158,10 +158,17 @@ public class GenreCollectionService
 
     private Dictionary<string, TargetCollection> BuildDesiredCollections(PluginConfiguration config, GenreRules rules)
     {
-        var desired = new Dictionary<string, TargetCollection>(StringComparer.OrdinalIgnoreCase);
-
-        void Collect(BaseItemKind kind, string scope, string format)
+        var candidates = new List<GenreCandidate>();
+        var formats = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
+            ["all"] = config.CollectionNameFormat,
+            ["movies"] = config.MovieCollectionNameFormat,
+            ["series"] = config.SeriesCollectionNameFormat
+        };
+
+        void Collect(BaseItemKind kind, string scope, bool singleGenre)
+        {
+            // Only top-level titles: movies and whole series, never seasons or episodes.
             var items = _libraryManager.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = [kind],
@@ -171,49 +178,32 @@ public class GenreCollectionService
 
             foreach (var item in items)
             {
-                foreach (var genre in rules.Normalize(item.Genres))
+                var genres = rules.Normalize(item.Genres).ToList();
+                if (genres.Count > 0)
                 {
-                    var key = CollectionKey(scope, genre);
-                    if (!desired.TryGetValue(key, out var target))
-                    {
-                        target = new TargetCollection(FormatName(format, genre));
-                        desired[key] = target;
-                    }
-
-                    target.ItemIds.Add(item.Id);
+                    candidates.Add(new GenreCandidate(item.Id, scope, genres, singleGenre));
                 }
             }
         }
 
-        if (config.SeparateMoviesAndSeries)
+        var separate = config.SeparateMoviesAndSeries;
+        if (config.IncludeMovies)
         {
-            if (config.IncludeMovies)
-            {
-                Collect(BaseItemKind.Movie, "movies", config.MovieCollectionNameFormat);
-            }
-
-            if (config.IncludeSeries)
-            {
-                Collect(BaseItemKind.Series, "series", config.SeriesCollectionNameFormat);
-            }
-        }
-        else
-        {
-            if (config.IncludeMovies)
-            {
-                Collect(BaseItemKind.Movie, "all", config.CollectionNameFormat);
-            }
-
-            if (config.IncludeSeries)
-            {
-                Collect(BaseItemKind.Series, "all", config.CollectionNameFormat);
-            }
+            Collect(BaseItemKind.Movie, separate ? "movies" : "all", config.SingleGenrePerMovie);
         }
 
-        var minimum = Math.Max(1, config.MinimumItemsPerGenre);
-        foreach (var key in desired.Where(kv => kv.Value.ItemIds.Count < minimum).Select(kv => kv.Key).ToList())
+        if (config.IncludeSeries)
         {
-            desired.Remove(key);
+            Collect(BaseItemKind.Series, separate ? "series" : "all", config.SingleGenrePerSeries);
+        }
+
+        var desired = new Dictionary<string, TargetCollection>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, target) in GenreAssignment.Assign(candidates, config.MinimumItemsPerGenre))
+        {
+            var scope = key[..key.IndexOf(':', StringComparison.Ordinal)];
+            var collection = new TargetCollection(FormatName(formats[scope], target.Genre));
+            collection.ItemIds.UnionWith(target.ItemIds);
+            desired[key] = collection;
         }
 
         return desired;

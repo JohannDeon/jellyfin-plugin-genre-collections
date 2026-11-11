@@ -30,6 +30,16 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool SeparateMoviesAndSeries { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether a series goes in a single genre collection (its main genre) instead of one per genre.
+    /// </summary>
+    public bool SingleGenrePerSeries { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether a movie goes in a single genre collection (its main genre) instead of one per genre.
+    /// </summary>
+    public bool SingleGenrePerMovie { get; set; }
+
+    /// <summary>
     /// Gets or sets the name format of a mixed collection. {0} is the genre.
     /// </summary>
     public string CollectionNameFormat { get; set; } = "{0}";

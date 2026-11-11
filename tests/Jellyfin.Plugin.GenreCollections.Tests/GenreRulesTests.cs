@@ -71,3 +71,50 @@ public class WebClientInjectorTests
         Assert.Equal(Html, WebClientInjector.RemoveTag(WebClientInjector.AddTag(Html)));
     }
 }
+
+public class GenreAssignmentTests
+{
+    private static GenreCandidate C(int id, bool single, params string[] genres)
+        => new(new System.Guid(id, 0, 0, new byte[8]), "all", genres, single);
+
+    [Fact]
+    public void SingleGenreItemGoesInMainGenreOnly()
+    {
+        var items = new[] { C(1, true, "Drame", "Crime"), C(2, false, "Drame"), C(3, false, "Crime") };
+        var result = GenreAssignment.Assign(items, 1);
+        Assert.Contains(items[0].ItemId, result["all:drame"].ItemIds);
+        Assert.DoesNotContain(items[0].ItemId, result["all:crime"].ItemIds);
+    }
+
+    [Fact]
+    public void MultiGenreItemGoesEverywhere()
+    {
+        var items = new[] { C(1, false, "Drame", "Crime") };
+        var result = GenreAssignment.Assign(items, 1);
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public void FallsBackToNextGenreWhenMainGenreIsTooSmall()
+    {
+        // "Western" only has one series: it does not get a collection, so the series goes in "Drame".
+        var items = new[]
+        {
+            C(1, true, "Western", "Drame"),
+            C(2, true, "Drame"),
+            C(3, true, "Drame"),
+        };
+        var result = GenreAssignment.Assign(items, 3);
+        Assert.Single(result);
+        Assert.Equal(3, result["all:drame"].ItemIds.Count);
+    }
+
+    [Fact]
+    public void DropsCollectionsThatBecomeTooSmall()
+    {
+        // Counting every genre, "Crime" has 2 items, but single-genre series all pick "Drame".
+        var items = new[] { C(1, true, "Drame", "Crime"), C(2, true, "Drame", "Crime") };
+        var result = GenreAssignment.Assign(items, 2);
+        Assert.Equal(new[] { "all:drame" }, result.Keys);
+    }
+}

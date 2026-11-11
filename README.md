@@ -17,7 +17,7 @@
 
 Genre Collections range automatiquement tes **films et séries en collections par genre** (Horreur, Comédie, Action, Animation…) et ajoute sur l'**écran d'accueil** des rangées pour retrouver tes nouveautés et tes contenus sans fouiller dans les dossiers.
 
-- **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
+- **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Les séries y sont rangées entières (jamais épisode par épisode), et par défaut dans leur genre principal uniquement. Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
 - **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Collections par genre » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
 - **Compatible avec ton thème** : aucun CSS ajouté. Les rangées reprennent le style de ton thème (Abyss, etc.) comme les rangées natives.
 
@@ -75,6 +75,8 @@ Les mises à jour apparaissent ensuite automatiquement dans le catalogue.
 | --- | --- | --- |
 | Créer et mettre à jour les collections | Activé | Active ou coupe la gestion des collections |
 | Inclure les films / les séries | Activé / Activé | Types de contenus rangés |
+| Une seule collection par série | Activé | La série entière va uniquement dans son genre principal (le premier de ses métadonnées) |
+| Une seule collection par film | Désactivé | Même principe pour les films |
 | Séparer films et séries | Désactivé | Une collection mixte, ou deux par genre |
 | Nom d'une collection mixte | `{0}` | `{0}` est remplacé par le genre |
 | Nom d'une collection de films / de séries | `{0} (Films)` / `{0} (Séries)` | Utilisés si films et séries sont séparés |
