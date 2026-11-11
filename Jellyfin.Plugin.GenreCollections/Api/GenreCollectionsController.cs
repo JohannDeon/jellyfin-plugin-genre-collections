@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Jellyfin.Plugin.GenreCollections.Configuration;
 using Jellyfin.Plugin.GenreCollections.Services;
 using Jellyfin.Plugin.GenreCollections.Tasks;
@@ -22,16 +23,31 @@ public class GenreCollectionsController : ControllerBase
 {
     private readonly ILibraryManager _libraryManager;
     private readonly ITaskManager _taskManager;
+    private readonly GenreCollectionService _service;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GenreCollectionsController"/> class.
     /// </summary>
     /// <param name="libraryManager">Library manager.</param>
     /// <param name="taskManager">Task manager.</param>
-    public GenreCollectionsController(ILibraryManager libraryManager, ITaskManager taskManager)
+    /// <param name="service">Genre collection service.</param>
+    public GenreCollectionsController(ILibraryManager libraryManager, ITaskManager taskManager, GenreCollectionService service)
     {
         _libraryManager = libraryManager;
         _taskManager = taskManager;
+        _service = service;
+    }
+
+    /// <summary>
+    /// Deletes every collection created by the plugin (admin only).
+    /// </summary>
+    /// <returns>Number of deleted collections.</returns>
+    [HttpPost("DeleteAll")]
+    [Authorize(Policy = Policies.RequiresElevation)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<int>> DeleteAll()
+    {
+        return await _service.DeleteAllAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -103,7 +119,13 @@ public class GenreCollectionsController : ControllerBase
         }
 
         var collections = GenreCollectionService.GetManagedCollections(_libraryManager)
-            .Select(b => new CollectionRef { Id = b.Id.ToString("N", System.Globalization.CultureInfo.InvariantCulture), Name = b.Name, Count = b.LinkedChildren.Length })
+            .Select(b => new CollectionRef
+            {
+                Id = b.Id.ToString("N", System.Globalization.CultureInfo.InvariantCulture),
+                Name = b.Name,
+                Count = b.GetLinkedChildren().Count(GenreCollectionService.IsOnDisk)
+            })
+            .Where(c => c.Count > 0)
             .OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
         dto.Collections = collections;

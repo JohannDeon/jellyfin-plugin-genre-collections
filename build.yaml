@@ -1,6 +1,6 @@
 name: "Genre Collections"
 guid: "51657d44-7198-4c95-b99d-afef3045fad9"
-version: "1.0.0.0"
+version: "1.1.0.0"
 targetAbi: "12.0.0.0"
 framework: "net10.0"
 overview: "Collections automatiques par genre et rangées d'accueil"
@@ -14,4 +14,4 @@ owner: "JohannDeon"
 artifacts:
 - "Jellyfin.Plugin.GenreCollections.dll"
 changelog: >
-  Première version.
+  Chaque film et série va dans un seul genre, le plus pertinent (priorité des genres réglable) ; affiche des collections tirée de leurs titres ; plus de collections dans « Nouveaux films » ; plus d'épisodes ni de titres absents dans les rangées ; collections vides masquées ; bouton pour supprimer toutes les collections créées.

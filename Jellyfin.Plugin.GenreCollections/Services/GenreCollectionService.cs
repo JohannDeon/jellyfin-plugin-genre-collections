@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -96,7 +97,7 @@ public class GenreCollectionService
 
     private async Task SyncInternalAsync(PluginConfiguration config, IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var rules = new GenreRules(config.GenreAliases, config.ExcludedGenres);
+        var rules = new GenreRules(config.GenreAliases, config.ExcludedGenres, config.GenrePriority);
         var desired = BuildDesiredCollections(config, rules);
         progress.Report(10);
 
@@ -128,9 +129,11 @@ public class GenreCollectionService
             }
             else
             {
-                await CreateCollectionAsync(key, target).ConfigureAwait(false);
+                boxSet = await CreateCollectionAsync(key, target).ConfigureAwait(false);
                 created++;
             }
+
+            await EnsureLockedWithPosterAsync(boxSet, target, cancellationToken).ConfigureAwait(false);
 
             done++;
             progress.Report(10 + (80.0 * done / Math.Max(1, desired.Count)));
@@ -158,10 +161,17 @@ public class GenreCollectionService
 
     private Dictionary<string, TargetCollection> BuildDesiredCollections(PluginConfiguration config, GenreRules rules)
     {
-        var desired = new Dictionary<string, TargetCollection>(StringComparer.OrdinalIgnoreCase);
-
-        void Collect(BaseItemKind kind, string scope, string format)
+        var candidates = new List<GenreCandidate>();
+        var formats = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
+            ["all"] = config.CollectionNameFormat,
+            ["movies"] = config.MovieCollectionNameFormat,
+            ["series"] = config.SeriesCollectionNameFormat
+        };
+
+        void Collect(BaseItemKind kind, string scope, bool singleGenre)
+        {
+            // Only top-level titles: movies and whole series, never seasons or episodes.
             var items = _libraryManager.GetItemList(new InternalItemsQuery
             {
                 IncludeItemTypes = [kind],
@@ -171,52 +181,85 @@ public class GenreCollectionService
 
             foreach (var item in items)
             {
-                foreach (var genre in rules.Normalize(item.Genres))
+                if (!IsOnDisk(item))
                 {
-                    var key = CollectionKey(scope, genre);
-                    if (!desired.TryGetValue(key, out var target))
-                    {
-                        target = new TargetCollection(FormatName(format, genre));
-                        desired[key] = target;
-                    }
+                    continue;
+                }
 
-                    target.ItemIds.Add(item.Id);
+                var normalized = rules.Normalize(item.Genres);
+                var genres = singleGenre ? rules.OrderByRelevance(normalized) : normalized.ToList();
+                if (genres.Count > 0)
+                {
+                    candidates.Add(new GenreCandidate(item.Id, scope, genres, singleGenre));
                 }
             }
         }
 
-        if (config.SeparateMoviesAndSeries)
+        var separate = config.SeparateMoviesAndSeries;
+        if (config.IncludeMovies)
         {
-            if (config.IncludeMovies)
-            {
-                Collect(BaseItemKind.Movie, "movies", config.MovieCollectionNameFormat);
-            }
-
-            if (config.IncludeSeries)
-            {
-                Collect(BaseItemKind.Series, "series", config.SeriesCollectionNameFormat);
-            }
-        }
-        else
-        {
-            if (config.IncludeMovies)
-            {
-                Collect(BaseItemKind.Movie, "all", config.CollectionNameFormat);
-            }
-
-            if (config.IncludeSeries)
-            {
-                Collect(BaseItemKind.Series, "all", config.CollectionNameFormat);
-            }
+            Collect(BaseItemKind.Movie, separate ? "movies" : "all", config.SingleGenrePerMovie);
         }
 
-        var minimum = Math.Max(1, config.MinimumItemsPerGenre);
-        foreach (var key in desired.Where(kv => kv.Value.ItemIds.Count < minimum).Select(kv => kv.Key).ToList())
+        if (config.IncludeSeries)
         {
-            desired.Remove(key);
+            Collect(BaseItemKind.Series, separate ? "series" : "all", config.SingleGenrePerSeries);
+        }
+
+        var desired = new Dictionary<string, TargetCollection>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (key, target) in GenreAssignment.Assign(candidates, config.MinimumItemsPerGenre))
+        {
+            var scope = key[..key.IndexOf(':', StringComparison.Ordinal)];
+            var collection = new TargetCollection(FormatName(formats[scope], target.Genre));
+            collection.ItemIds.UnionWith(target.ItemIds);
+            desired[key] = collection;
         }
 
         return desired;
+    }
+
+    /// <summary>
+    /// Returns true when the item really exists on the server (not a placeholder, files still present).
+    /// </summary>
+    /// <param name="item">Library item.</param>
+    /// <returns>True if the item is on disk.</returns>
+    public static bool IsOnDisk(BaseItem item)
+    {
+        if (item.IsVirtualItem)
+        {
+            return false;
+        }
+
+        if (!item.IsFileProtocol)
+        {
+            return true; // remote/streamed item, nothing to check on disk
+        }
+
+        return !string.IsNullOrEmpty(item.Path) && (File.Exists(item.Path) || Directory.Exists(item.Path));
+    }
+
+    /// <summary>
+    /// Deletes every collection created by this plugin.
+    /// </summary>
+    /// <returns>Number of deleted collections.</returns>
+    public async Task<int> DeleteAllAsync()
+    {
+        await SyncLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var collections = GetManagedCollections(_libraryManager);
+            foreach (var boxSet in collections)
+            {
+                _logger.LogInformation("Deleting genre collection {Name}", boxSet.Name);
+                _libraryManager.DeleteItem(boxSet, new DeleteOptions { DeleteFileLocation = true }, true);
+            }
+
+            return collections.Count;
+        }
+        finally
+        {
+            SyncLock.Release();
+        }
     }
 
     private static string FormatName(string? format, string genre)
@@ -236,14 +279,63 @@ public class GenreCollectionService
         }
     }
 
-    private async Task CreateCollectionAsync(string key, TargetCollection target)
+    /// <summary>
+    /// Locks the collection so internet metadata providers (TMDb collections) never give it an unrelated
+    /// name or poster, and uses the poster of one of its own titles (the best rated one) as its image.
+    /// </summary>
+    private async Task EnsureLockedWithPosterAsync(BoxSet boxSet, TargetCollection target, CancellationToken cancellationToken)
+    {
+        var changed = false;
+        if (!boxSet.IsLocked)
+        {
+            boxSet.IsLocked = true;
+            changed = true;
+        }
+
+        var cover = target.ItemIds
+            .Select(id => _libraryManager.GetItemById(id))
+            .Where(item => item is not null && item.HasImage(ImageType.Primary, 0))
+            .OrderByDescending(item => item!.CommunityRating ?? 0)
+            .ThenByDescending(item => item!.DateCreated)
+            .FirstOrDefault();
+
+        if (cover is not null)
+        {
+            var image = cover.GetImageInfo(ImageType.Primary, 0);
+            var current = boxSet.HasImage(ImageType.Primary, 0) ? boxSet.GetImageInfo(ImageType.Primary, 0) : null;
+            var stillValid = current is not null
+                && target.ItemIds.Any(id => string.Equals(_libraryManager.GetItemById(id)?.GetImageInfo(ImageType.Primary, 0)?.Path, current.Path, StringComparison.Ordinal));
+            if (!stillValid)
+            {
+                boxSet.SetImage(
+                    new ItemImageInfo
+                    {
+                        Path = image.Path,
+                        Type = ImageType.Primary,
+                        DateModified = image.DateModified,
+                        Width = image.Width,
+                        Height = image.Height,
+                        BlurHash = image.BlurHash
+                    },
+                    0);
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await boxSet.UpdateToRepositoryAsync(ItemUpdateType.ImageUpdate, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<BoxSet> CreateCollectionAsync(string key, TargetCollection target)
     {
         _logger.LogInformation("Creating genre collection {Name} with {Count} items", target.Name, target.ItemIds.Count);
 
         var options = new CollectionCreationOptions
         {
             Name = target.Name,
-            IsLocked = false,
+            IsLocked = true,
             ItemIdList = target.ItemIds.Select(id => id.ToString("N", CultureInfo.InvariantCulture)).ToArray()
         };
         options.ProviderIds[Plugin.ProviderKey] = key;
@@ -256,6 +348,8 @@ public class GenreCollectionService
             boxSet.LockedFields = [.. boxSet.LockedFields, MetadataField.Name];
             await boxSet.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).ConfigureAwait(false);
         }
+
+        return boxSet;
     }
 
     private async Task<bool> UpdateCollectionAsync(BoxSet boxSet, TargetCollection target, CancellationToken cancellationToken)

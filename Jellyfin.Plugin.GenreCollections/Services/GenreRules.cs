@@ -13,16 +13,39 @@ public sealed class GenreRules
 
     private readonly Dictionary<string, string[]> _aliases;
     private readonly HashSet<string> _excluded;
+    private readonly Dictionary<string, int> _priority;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GenreRules"/> class.
     /// </summary>
     /// <param name="aliases">Alias lines ("Source=Cible1,Cible2").</param>
     /// <param name="excluded">Excluded genres, comma or newline separated.</param>
-    public GenreRules(string? aliases, string? excluded)
+    /// <param name="priority">Genre priority, most specific first.</param>
+    public GenreRules(string? aliases, string? excluded, string? priority = null)
     {
         _aliases = ParseAliases(aliases);
         _excluded = new HashSet<string>(SplitList(excluded), StringComparer.OrdinalIgnoreCase);
+        _priority = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var genre in SplitList(priority))
+        {
+            _priority.TryAdd(genre, _priority.Count);
+        }
+    }
+
+    /// <summary>
+    /// Orders genres by relevance: genres of the priority list first (in that order), then the others in metadata order.
+    /// The first genre is the one a single-genre title goes in.
+    /// </summary>
+    /// <param name="genres">Normalized genres in metadata order.</param>
+    /// <returns>Genres, most relevant first.</returns>
+    public IReadOnlyList<string> OrderByRelevance(IEnumerable<string> genres)
+    {
+        return genres
+            .Select((genre, index) => (genre, index))
+            .OrderBy(g => _priority.TryGetValue(g.genre, out var rank) ? rank : int.MaxValue)
+            .ThenBy(g => g.index)
+            .Select(g => g.genre)
+            .ToList();
     }
 
     /// <summary>

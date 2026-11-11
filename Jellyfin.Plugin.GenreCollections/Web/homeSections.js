@@ -111,7 +111,12 @@
             Fields: 'PrimaryImageAspectRatio,ProductionYear',
             ImageTypeLimit: 1,
             EnableImageTypes: 'Primary',
-            EnableTotalRecordCount: false
+            EnableTotalRecordCount: false,
+            // Never replace movies by the collections they belong to ("group movies into collections" setting)
+            CollapseBoxSetItems: false,
+            // Only titles really present on the server (no placeholders / missing items)
+            IsMissing: false,
+            LocationTypes: 'FileSystem,Remote'
         };
         for (var key in query) {
             if (Object.prototype.hasOwnProperty.call(query, key)) {
@@ -136,7 +141,6 @@
                 IncludeItemTypes: 'Movie',
                 SortBy: 'DateCreated,SortName',
                 SortOrder: 'Descending',
-                IsMissing: false,
                 Limit: limit
             }).then(function (items) {
                 return { title: config.Labels.LatestMovies, link: null, items: items };
@@ -158,6 +162,7 @@
             var ids = config.Collections.map(function (c) { return c.Id; }).join(',');
             jobs.push(fetchItems(apiClient, {
                 Ids: ids,
+                Recursive: false,
                 SortBy: 'SortName',
                 SortOrder: 'Ascending'
             }).then(function (items) {
@@ -167,8 +172,12 @@
 
         if (config.ShowGenreRows) {
             config.GenreRows.forEach(function (collection) {
+                // Only the collection's own titles (movies and whole series):
+                // a recursive query would also return the episodes and seasons inside each series.
                 var query = {
                     ParentId: collection.Id,
+                    Recursive: false,
+                    IncludeItemTypes: 'Movie,Series',
                     SortBy: config.GenreRowSort === 'Random' ? 'Random' : (config.GenreRowSort + ',SortName'),
                     SortOrder: 'Descending',
                     Limit: limit

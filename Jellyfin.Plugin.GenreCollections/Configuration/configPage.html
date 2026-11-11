@@ -33,6 +33,25 @@
                         </div>
                         <div class="checkboxContainer checkboxContainer-withDescription">
                             <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="SingleGenrePerSeries" />
+                                <span>Une seule collection par série</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">La série entière va dans son genre le plus pertinent (voir « Priorité des genres ») au lieu d'apparaître dans chacun de ses genres.</div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="SingleGenrePerMovie" />
+                                <span>Une seule collection par film</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Même principe pour les films.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Priorité des genres</label>
+                            <textarea is="emby-textarea" rows="6" data-key="GenrePriority"></textarea>
+                            <div class="fieldDescription">Un genre par ligne, du plus spécifique au plus général. Un titre rangé dans une seule collection va dans le premier genre de cette liste qu'il possède (ex. un film « Drame, Horreur » va dans Horreur). Sans aucun genre de la liste, il garde son premier genre.</div>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="SeparateMoviesAndSeries" />
                                 <span>Séparer films et séries</span>
                             </label>
@@ -74,6 +93,10 @@
                         <button is="emby-button" type="button" id="GenreCollectionsSyncNow" class="raised emby-button">
                             <span>Synchroniser maintenant</span>
                         </button>
+                        <button is="emby-button" type="button" id="GenreCollectionsDeleteAll" class="raised emby-button button-delete">
+                            <span>Supprimer toutes les collections créées</span>
+                        </button>
+                        <div class="fieldDescription">Supprime uniquement les collections créées par ce plugin. Pour qu'elles ne reviennent pas au prochain scan, décoche d'abord « Créer et mettre à jour les collections par genre » et enregistre.</div>
                     </div>
 
                     <div class="verticalSection">
@@ -198,6 +221,20 @@
                         });
                     });
                     return false;
+                });
+
+                page.querySelector('#GenreCollectionsDeleteAll').addEventListener('click', function () {
+                    if (!window.confirm('Supprimer toutes les collections créées par Genre Collections ? Tes collections faites à la main ne sont pas touchées.')) {
+                        return;
+                    }
+                    Dashboard.showLoadingMsg();
+                    ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('GenreCollections/DeleteAll'), dataType: 'json' }).then(function (count) {
+                        Dashboard.hideLoadingMsg();
+                        Dashboard.alert(count + ' collection(s) supprimée(s).');
+                    }, function () {
+                        Dashboard.hideLoadingMsg();
+                        Dashboard.alert('Impossible de supprimer les collections.');
+                    });
                 });
 
                 page.querySelector('#GenreCollectionsSyncNow').addEventListener('click', function () {

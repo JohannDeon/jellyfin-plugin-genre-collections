@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/logo.png" alt="Genre Collections" width="640"></p>
+
 <h1 align="center">Genre Collections pour Jellyfin</h1>
 
 <p align="center">
@@ -17,7 +19,7 @@
 
 Genre Collections range automatiquement tes **films et séries en collections par genre** (Horreur, Comédie, Action, Animation…) et ajoute sur l'**écran d'accueil** des rangées pour retrouver tes nouveautés et tes contenus sans fouiller dans les dossiers.
 
-- **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
+- **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Chaque film et chaque série entière (jamais épisode par épisode) va dans **un seul genre**, le plus pertinent, et l'affiche de la collection est celle d'un de ses titres. Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
 - **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Collections par genre » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
 - **Compatible avec ton thème** : aucun CSS ajouté. Les rangées reprennent le style de ton thème (Abyss, etc.) comme les rangées natives.
 
@@ -75,6 +77,9 @@ Les mises à jour apparaissent ensuite automatiquement dans le catalogue.
 | --- | --- | --- |
 | Créer et mettre à jour les collections | Activé | Active ou coupe la gestion des collections |
 | Inclure les films / les séries | Activé / Activé | Types de contenus rangés |
+| Une seule collection par série | Activé | La série entière va uniquement dans son genre le plus pertinent |
+| Une seule collection par film | Activé | Même principe pour les films |
+| Priorité des genres | Animation, Documentaire, Horreur, Science-Fiction, Fantastique, Western, Guerre, Familial, Musique, Thriller, Crime, Mystère, Action, Aventure, Comédie, Romance, Histoire, Drame | Choisit le genre le plus pertinent : le premier de la liste que possède le titre (un film « Drame, Horreur » va dans Horreur) |
 | Séparer films et séries | Désactivé | Une collection mixte, ou deux par genre |
 | Nom d'une collection mixte | `{0}` | `{0}` est remplacé par le genre |
 | Nom d'une collection de films / de séries | `{0} (Films)` / `{0} (Séries)` | Utilisés si films et séries sont séparés |
@@ -82,6 +87,7 @@ Les mises à jour apparaissent ensuite automatiquement dans le catalogue.
 | Genres exclus | Téléfilm, TV Movie | Ces genres n'ont jamais de collection |
 | Alias de genres | voir ci-dessous | Fusionne ou découpe des genres |
 | Supprimer les collections devenues inutiles | Activé | Supprime une collection de genre qui n'a plus assez de titres |
+| Bouton « Supprimer toutes les collections créées » | | Supprime d'un coup toutes les collections du plugin (pas celles faites à la main) |
 
 **Alias de genres.** Une règle par ligne, au format `Source=Cible` ou `Source=Cible1,Cible2`. Voici les règles par défaut :
 
@@ -152,7 +158,7 @@ Non. Le plugin ne gère que les collections qu'il a créées. Elles portent un i
 ## Désinstallation
 
 1. **Tableau de bord → Extensions → Genre Collections → Désinstaller**, puis redémarre Jellyfin. La ligne ajoutée à `index.html` est retirée à l'arrêt du serveur.
-2. Les collections de genre restent. Pour les retirer, supprime-les depuis la bibliothèque **Collections**.
+2. Les collections de genre restent. Pour les retirer, utilise **avant de désinstaller** le bouton « Supprimer toutes les collections créées » dans les paramètres du plugin.
 
 ## Compilation
 
