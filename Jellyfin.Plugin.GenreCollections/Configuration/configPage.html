@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Genre Collections</title>
+</head>
+<body>
+    <div id="GenreCollectionsConfigPage" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox,emby-textarea">
+        <div data-role="content">
+            <div class="content-primary">
+                <form id="GenreCollectionsConfigForm">
+                    <div class="verticalSection">
+                        <h2 class="sectionTitle">Collections par genre</h2>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="EnableGenreCollections" />
+                                <span>Créer et mettre à jour les collections par genre</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Mises à jour après chaque scan de bibliothèque et tous les jours à 4h.</div>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="IncludeMovies" />
+                                <span>Inclure les films</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="IncludeSeries" />
+                                <span>Inclure les séries</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="SeparateMoviesAndSeries" />
+                                <span>Séparer films et séries</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Ex. « Horreur (Films) » et « Horreur (Séries) » au lieu d'une seule collection « Horreur ».</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Nom d'une collection mixte</label>
+                            <input type="text" is="emby-input" data-key="CollectionNameFormat" />
+                            <div class="fieldDescription">{0} est remplacé par le genre.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Nom d'une collection de films</label>
+                            <input type="text" is="emby-input" data-key="MovieCollectionNameFormat" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Nom d'une collection de séries</label>
+                            <input type="text" is="emby-input" data-key="SeriesCollectionNameFormat" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Nombre minimum de titres par genre</label>
+                            <input type="number" is="emby-input" min="1" data-key="MinimumItemsPerGenre" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Genres exclus</label>
+                            <textarea is="emby-textarea" rows="3" data-key="ExcludedGenres"></textarea>
+                            <div class="fieldDescription">Un genre par ligne (ou séparés par des virgules).</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Alias de genres</label>
+                            <textarea is="emby-textarea" rows="6" data-key="GenreAliases"></textarea>
+                            <div class="fieldDescription">Une règle par ligne : <code>Source=Cible</code> ou <code>Source=Cible1,Cible2</code>. Sert à fusionner les genres (ex. « Sci-Fi &amp; Fantasy » vers « Science-Fiction »).</div>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="RemoveObsoleteCollections" />
+                                <span>Supprimer les collections de genre devenues inutiles</span>
+                            </label>
+                        </div>
+                        <button is="emby-button" type="button" id="GenreCollectionsSyncNow" class="raised emby-button">
+                            <span>Synchroniser maintenant</span>
+                        </button>
+                    </div>
+
+                    <div class="verticalSection">
+                        <h2 class="sectionTitle">Écran d'accueil</h2>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="EnableHomeSections" />
+                                <span>Ajouter des rangées sur l'écran d'accueil</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Aucun CSS n'est ajouté : les rangées reprennent le style de ton thème.</div>
+                        </div>
+                        <div class="selectContainer">
+                            <label class="selectLabel">Position</label>
+                            <select is="emby-select" data-key="HomeSectionsPosition">
+                                <option value="Top">Au-dessus des rangées Jellyfin</option>
+                                <option value="Bottom">En dessous des rangées Jellyfin</option>
+                            </select>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="ShowLatestMovies" />
+                                <span>Rangée « Nouveaux films »</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="ShowLatestSeries" />
+                                <span>Rangée « Séries avec de nouveaux épisodes »</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="ShowCollectionsRow" />
+                                <span>Rangée « Collections par genre »</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="ShowGenreRows" />
+                                <span>Une rangée par genre</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Nombre maximum de rangées de genre</label>
+                            <input type="number" is="emby-input" min="0" data-key="MaxGenreRows" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Genres à afficher en premier</label>
+                            <textarea is="emby-textarea" rows="3" data-key="PinnedGenres"></textarea>
+                            <div class="fieldDescription">Un genre par ligne. Les autres suivent, du plus fourni au moins fourni.</div>
+                        </div>
+                        <div class="selectContainer">
+                            <label class="selectLabel">Ordre dans les rangées de genre</label>
+                            <select is="emby-select" data-key="GenreRowSort">
+                                <option value="Random">Aléatoire (découverte)</option>
+                                <option value="DateCreated">Derniers ajoutés</option>
+                                <option value="CommunityRating">Mieux notés</option>
+                                <option value="PremiereDate">Plus récents (date de sortie)</option>
+                            </select>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Titres par rangée</label>
+                            <input type="number" is="emby-input" min="4" max="60" data-key="ItemsPerSection" />
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="HideWatchedInGenreRows" />
+                                <span>Masquer les titres déjà vus dans les rangées de genre</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                            <span>Enregistrer</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script type="text/javascript">
+            (function () {
+                var pluginId = '51657d44-7198-4c95-b99d-afef3045fad9';
+                var page = document.querySelector('#GenreCollectionsConfigPage');
+
+                function fields() {
+                    return page.querySelectorAll('[data-key]');
+                }
+
+                page.addEventListener('pageshow', function () {
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        fields().forEach(function (el) {
+                            var value = config[el.getAttribute('data-key')];
+                            if (el.type === 'checkbox') {
+                                el.checked = !!value;
+                            } else {
+                                el.value = value == null ? '' : value;
+                            }
+                        });
+                        Dashboard.hideLoadingMsg();
+                    });
+                });
+
+                page.querySelector('#GenreCollectionsConfigForm').addEventListener('submit', function (e) {
+                    e.preventDefault();
+                    Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        fields().forEach(function (el) {
+                            var key = el.getAttribute('data-key');
+                            if (el.type === 'checkbox') {
+                                config[key] = el.checked;
+                            } else if (el.type === 'number') {
+                                config[key] = parseInt(el.value, 10) || 0;
+                            } else {
+                                config[key] = el.value;
+                            }
+                        });
+                        ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                        });
+                    });
+                    return false;
+                });
+
+                page.querySelector('#GenreCollectionsSyncNow').addEventListener('click', function () {
+                    ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('GenreCollections/Sync') }).then(function () {
+                        Dashboard.alert('Synchronisation lancée. Les collections apparaîtront dans quelques instants.');
+                    }, function () {
+                        Dashboard.alert('Impossible de lancer la synchronisation.');
+                    });
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>

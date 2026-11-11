@@ -1,0 +1,11 @@
+[
+  {
+    "guid": "51657d44-7198-4c95-b99d-afef3045fad9",
+    "name": "Genre Collections",
+    "overview": "Collections automatiques par genre et rangées d'accueil",
+    "description": "Crée et maintient une collection par genre (Horreur, Comédie...) pour les films et les séries, et ajoute sur l'écran d'accueil des rangées Nouveaux films, Séries avec de nouveaux épisodes, Collections par genre et une rangée par genre, sans ajouter de CSS.",
+    "owner": "JohannDeon",
+    "category": "General",
+    "versions": []
+  }
+]
