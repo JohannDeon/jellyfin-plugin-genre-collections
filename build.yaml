@@ -1,0 +1,17 @@
+name: "Genre Collections"
+guid: "51657d44-7198-4c95-b99d-afef3045fad9"
+version: "1.0.0.0"
+targetAbi: "12.0.0.0"
+framework: "net10.0"
+overview: "Collections automatiques par genre et rangées d'accueil"
+description: >
+  Crée et maintient une collection par genre (Horreur, Comédie, ...) pour les films
+  et les séries, et ajoute sur l'écran d'accueil des rangées « Nouveaux films »,
+  « Séries avec de nouveaux épisodes », « Collections par genre » et une rangée par genre,
+  sans ajouter de CSS (le thème installé garde la main).
+category: "General"
+owner: "JohannDeon"
+artifacts:
+- "Jellyfin.Plugin.GenreCollections.dll"
+changelog: >
+  Première version.
