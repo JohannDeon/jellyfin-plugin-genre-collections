@@ -88,6 +88,10 @@
                         <button is="emby-button" type="button" id="GenreCollectionsSyncNow" class="raised emby-button">
                             <span>Synchroniser maintenant</span>
                         </button>
+                        <button is="emby-button" type="button" id="GenreCollectionsDeleteAll" class="raised emby-button button-delete">
+                            <span>Supprimer toutes les collections créées</span>
+                        </button>
+                        <div class="fieldDescription">Supprime uniquement les collections créées par ce plugin. Pour qu'elles ne reviennent pas au prochain scan, décoche d'abord « Créer et mettre à jour les collections par genre » et enregistre.</div>
                     </div>
 
                     <div class="verticalSection">
@@ -212,6 +216,20 @@
                         });
                     });
                     return false;
+                });
+
+                page.querySelector('#GenreCollectionsDeleteAll').addEventListener('click', function () {
+                    if (!window.confirm('Supprimer toutes les collections créées par Genre Collections ? Tes collections faites à la main ne sont pas touchées.')) {
+                        return;
+                    }
+                    Dashboard.showLoadingMsg();
+                    ApiClient.ajax({ type: 'POST', url: ApiClient.getUrl('GenreCollections/DeleteAll'), dataType: 'json' }).then(function (count) {
+                        Dashboard.hideLoadingMsg();
+                        Dashboard.alert(count + ' collection(s) supprimée(s).');
+                    }, function () {
+                        Dashboard.hideLoadingMsg();
+                        Dashboard.alert('Impossible de supprimer les collections.');
+                    });
                 });
 
                 page.querySelector('#GenreCollectionsSyncNow').addEventListener('click', function () {

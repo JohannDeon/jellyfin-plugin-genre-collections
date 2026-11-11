@@ -14,4 +14,4 @@ owner: "JohannDeon"
 artifacts:
 - "Jellyfin.Plugin.GenreCollections.dll"
 changelog: >
-  Séries rangées entières dans leur genre principal ; rangées d'accueil sans épisodes.
+  Séries rangées entières dans leur genre principal ; plus d'épisodes ni de titres absents du serveur dans les rangées ; collections vides masquées ; bouton pour supprimer toutes les collections créées.

@@ -84,6 +84,7 @@ Les mises à jour apparaissent ensuite automatiquement dans le catalogue.
 | Genres exclus | Téléfilm, TV Movie | Ces genres n'ont jamais de collection |
 | Alias de genres | voir ci-dessous | Fusionne ou découpe des genres |
 | Supprimer les collections devenues inutiles | Activé | Supprime une collection de genre qui n'a plus assez de titres |
+| Bouton « Supprimer toutes les collections créées » | | Supprime d'un coup toutes les collections du plugin (pas celles faites à la main) |
 
 **Alias de genres.** Une règle par ligne, au format `Source=Cible` ou `Source=Cible1,Cible2`. Voici les règles par défaut :
 
@@ -154,7 +155,7 @@ Non. Le plugin ne gère que les collections qu'il a créées. Elles portent un i
 ## Désinstallation
 
 1. **Tableau de bord → Extensions → Genre Collections → Désinstaller**, puis redémarre Jellyfin. La ligne ajoutée à `index.html` est retirée à l'arrêt du serveur.
-2. Les collections de genre restent. Pour les retirer, supprime-les depuis la bibliothèque **Collections**.
+2. Les collections de genre restent. Pour les retirer, utilise **avant de désinstaller** le bouton « Supprimer toutes les collections créées » dans les paramètres du plugin.
 
 ## Compilation
 

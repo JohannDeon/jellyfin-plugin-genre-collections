@@ -111,7 +111,10 @@
             Fields: 'PrimaryImageAspectRatio,ProductionYear',
             ImageTypeLimit: 1,
             EnableImageTypes: 'Primary',
-            EnableTotalRecordCount: false
+            EnableTotalRecordCount: false,
+            // Only titles really present on the server (no placeholders / missing items)
+            IsMissing: false,
+            LocationTypes: 'FileSystem,Remote'
         };
         for (var key in query) {
             if (Object.prototype.hasOwnProperty.call(query, key)) {
@@ -136,7 +139,6 @@
                 IncludeItemTypes: 'Movie',
                 SortBy: 'DateCreated,SortName',
                 SortOrder: 'Descending',
-                IsMissing: false,
                 Limit: limit
             }).then(function (items) {
                 return { title: config.Labels.LatestMovies, link: null, items: items };

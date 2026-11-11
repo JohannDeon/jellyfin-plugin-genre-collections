@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -178,6 +179,11 @@ public class GenreCollectionService
 
             foreach (var item in items)
             {
+                if (!IsOnDisk(item))
+                {
+                    continue;
+                }
+
                 var genres = rules.Normalize(item.Genres).ToList();
                 if (genres.Count > 0)
                 {
@@ -207,6 +213,50 @@ public class GenreCollectionService
         }
 
         return desired;
+    }
+
+    /// <summary>
+    /// Returns true when the item really exists on the server (not a placeholder, files still present).
+    /// </summary>
+    /// <param name="item">Library item.</param>
+    /// <returns>True if the item is on disk.</returns>
+    public static bool IsOnDisk(BaseItem item)
+    {
+        if (item.IsVirtualItem)
+        {
+            return false;
+        }
+
+        if (!item.IsFileProtocol)
+        {
+            return true; // remote/streamed item, nothing to check on disk
+        }
+
+        return !string.IsNullOrEmpty(item.Path) && (File.Exists(item.Path) || Directory.Exists(item.Path));
+    }
+
+    /// <summary>
+    /// Deletes every collection created by this plugin.
+    /// </summary>
+    /// <returns>Number of deleted collections.</returns>
+    public async Task<int> DeleteAllAsync()
+    {
+        await SyncLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            var collections = GetManagedCollections(_libraryManager);
+            foreach (var boxSet in collections)
+            {
+                _logger.LogInformation("Deleting genre collection {Name}", boxSet.Name);
+                _libraryManager.DeleteItem(boxSet, new DeleteOptions { DeleteFileLocation = true }, true);
+            }
+
+            return collections.Count;
+        }
+        finally
+        {
+            SyncLock.Release();
+        }
     }
 
     private static string FormatName(string? format, string genre)
