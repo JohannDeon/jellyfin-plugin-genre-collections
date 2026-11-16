@@ -100,6 +100,28 @@
                     </div>
 
                     <div class="verticalSection">
+                        <h2 class="sectionTitle">Sagas de films</h2>
+
+                        <div class="checkboxContainer checkboxContainer-withDescription">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="EnableSagaCollections" />
+                                <span>Créer une collection par saga</span>
+                            </label>
+                            <div class="fieldDescription checkboxFieldDescription">Harry Potter, Hunger Games, Le Seigneur des anneaux… d'après la saga TMDb de chaque film. L'affiche officielle de la saga est utilisée. Les sagas que tu as déjà en collection ne sont pas dupliquées.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Nombre minimum de films par saga</label>
+                            <input type="number" is="emby-input" min="2" data-key="MinimumMoviesPerSaga" />
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="ShowSagasRow" />
+                                <span>Rangée « Films SAGA » en première ligne de l'accueil</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection">
                         <h2 class="sectionTitle">Écran d'accueil</h2>
 
                         <div class="checkboxContainer checkboxContainer-withDescription">

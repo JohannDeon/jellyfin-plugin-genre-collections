@@ -136,6 +136,18 @@
         var serverId = apiClient.serverId();
         var jobs = [];
 
+        // First row: movie sagas (Harry Potter, Hunger Games, ...), one poster per saga.
+        if (config.Sagas && config.Sagas.length) {
+            jobs.push(fetchItems(apiClient, {
+                Ids: config.Sagas.map(function (c) { return c.Id; }).join(','),
+                Recursive: false,
+                SortBy: 'SortName',
+                SortOrder: 'Ascending'
+            }).then(function (items) {
+                return { title: config.Labels.Sagas, link: null, items: items };
+            }));
+        }
+
         if (config.ShowLatestMovies) {
             jobs.push(fetchItems(apiClient, {
                 IncludeItemTypes: 'Movie',
