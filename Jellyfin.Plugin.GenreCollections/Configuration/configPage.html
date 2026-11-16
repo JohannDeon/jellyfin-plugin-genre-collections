@@ -9,151 +9,92 @@
         <div data-role="content">
             <div class="content-primary">
                 <form id="GenreCollectionsConfigForm">
-                    <div class="verticalSection">
-                        <h2 class="sectionTitle">Collections par genre</h2>
 
-                        <div class="checkboxContainer checkboxContainer-withDescription">
+                    <div class="verticalSection">
+                        <div class="sectionTitleContainer">
+                            <h2 class="sectionTitle">Genre Collections</h2>
+                        </div>
+                        <p class="fieldDescription">Range tes films et séries par genre et par saga, et ajoute des rangées sur l'accueil.</p>
+                        <div>
+                            <button is="emby-button" type="button" id="GenreCollectionsSyncNow" class="raised button-submit emby-button">
+                                <span>Synchroniser maintenant</span>
+                            </button>
+                            <button is="emby-button" type="button" id="GenreCollectionsDeleteAll" class="raised button-delete emby-button">
+                                <span>Supprimer les collections créées</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="verticalSection">
+                        <h2 class="sectionTitle">Collections</h2>
+                        <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="EnableGenreCollections" />
-                                <span>Créer et mettre à jour les collections par genre</span>
+                                <span>Collections par genre</span>
                             </label>
-                            <div class="fieldDescription checkboxFieldDescription">Mises à jour après chaque scan de bibliothèque et tous les jours à 4h.</div>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="EnableSagaCollections" />
+                                <span>Collections par saga (Harry Potter, Hunger Games…)</span>
+                            </label>
                         </div>
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="IncludeMovies" />
-                                <span>Inclure les films</span>
+                                <span>Films</span>
                             </label>
                         </div>
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="IncludeSeries" />
-                                <span>Inclure les séries</span>
+                                <span>Séries</span>
                             </label>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input type="checkbox" is="emby-checkbox" data-key="SingleGenrePerSeries" />
-                                <span>Une seule collection par série</span>
-                            </label>
-                            <div class="fieldDescription checkboxFieldDescription">La série entière va dans son genre le plus pertinent (voir « Priorité des genres ») au lieu d'apparaître dans chacun de ses genres.</div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input type="checkbox" is="emby-checkbox" data-key="SingleGenrePerMovie" />
-                                <span>Une seule collection par film</span>
-                            </label>
-                            <div class="fieldDescription checkboxFieldDescription">Même principe pour les films.</div>
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Priorité des genres</label>
-                            <textarea is="emby-textarea" rows="6" data-key="GenrePriority"></textarea>
-                            <div class="fieldDescription">Un genre par ligne, du plus spécifique au plus général. Un titre rangé dans une seule collection va dans le premier genre de cette liste qu'il possède (ex. un film « Drame, Horreur » va dans Horreur). Sans aucun genre de la liste, il garde son premier genre.</div>
-                        </div>
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input type="checkbox" is="emby-checkbox" data-key="SeparateMoviesAndSeries" />
-                                <span>Séparer films et séries</span>
-                            </label>
-                            <div class="fieldDescription checkboxFieldDescription">Ex. « Horreur (Films) » et « Horreur (Séries) » au lieu d'une seule collection « Horreur ».</div>
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Nom d'une collection mixte</label>
-                            <input type="text" is="emby-input" data-key="CollectionNameFormat" />
-                            <div class="fieldDescription">{0} est remplacé par le genre.</div>
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Nom d'une collection de films</label>
-                            <input type="text" is="emby-input" data-key="MovieCollectionNameFormat" />
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Nom d'une collection de séries</label>
-                            <input type="text" is="emby-input" data-key="SeriesCollectionNameFormat" />
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Nombre minimum de titres par genre</label>
-                            <input type="number" is="emby-input" min="1" data-key="MinimumItemsPerGenre" />
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Genres exclus</label>
-                            <textarea is="emby-textarea" rows="3" data-key="ExcludedGenres"></textarea>
-                            <div class="fieldDescription">Un genre par ligne (ou séparés par des virgules).</div>
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Alias de genres</label>
-                            <textarea is="emby-textarea" rows="6" data-key="GenreAliases"></textarea>
-                            <div class="fieldDescription">Une règle par ligne : <code>Source=Cible</code> ou <code>Source=Cible1,Cible2</code>. Sert à fusionner les genres (ex. « Sci-Fi &amp; Fantasy » vers « Science-Fiction »).</div>
                         </div>
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
-                                <input type="checkbox" is="emby-checkbox" data-key="RemoveObsoleteCollections" />
-                                <span>Supprimer les collections de genre devenues inutiles</span>
+                                <input type="checkbox" is="emby-checkbox" data-key="SingleGenrePerMovie" />
+                                <span>Un seul genre par film</span>
                             </label>
                         </div>
-                        <button is="emby-button" type="button" id="GenreCollectionsSyncNow" class="raised emby-button">
-                            <span>Synchroniser maintenant</span>
-                        </button>
-                        <button is="emby-button" type="button" id="GenreCollectionsDeleteAll" class="raised emby-button button-delete">
-                            <span>Supprimer toutes les collections créées</span>
-                        </button>
-                        <div class="fieldDescription">Supprime uniquement les collections créées par ce plugin. Pour qu'elles ne reviennent pas au prochain scan, décoche d'abord « Créer et mettre à jour les collections par genre » et enregistre.</div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="SingleGenrePerSeries" />
+                                <span>Un seul genre par série</span>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="verticalSection">
-                        <h2 class="sectionTitle">Sagas de films</h2>
-
-                        <div class="checkboxContainer checkboxContainer-withDescription">
+                        <h2 class="sectionTitle">Accueil</h2>
+                        <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
-                                <input type="checkbox" is="emby-checkbox" data-key="EnableSagaCollections" />
-                                <span>Créer une collection par saga</span>
+                                <input type="checkbox" is="emby-checkbox" data-key="EnableHomeSections" />
+                                <span>Ajouter des rangées sur l'accueil</span>
                             </label>
-                            <div class="fieldDescription checkboxFieldDescription">Harry Potter, Hunger Games, Le Seigneur des anneaux… d'après la saga TMDb de chaque film. L'affiche officielle de la saga est utilisée. Les sagas que tu as déjà en collection ne sont pas dupliquées.</div>
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Nombre minimum de films par saga</label>
-                            <input type="number" is="emby-input" min="2" data-key="MinimumMoviesPerSaga" />
                         </div>
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="ShowSagasRow" />
-                                <span>Rangée « Films SAGA » en première ligne de l'accueil</span>
+                                <span>Films SAGA</span>
                             </label>
-                        </div>
-                    </div>
-
-                    <div class="verticalSection">
-                        <h2 class="sectionTitle">Écran d'accueil</h2>
-
-                        <div class="checkboxContainer checkboxContainer-withDescription">
-                            <label class="emby-checkbox-label">
-                                <input type="checkbox" is="emby-checkbox" data-key="EnableHomeSections" />
-                                <span>Ajouter des rangées sur l'écran d'accueil</span>
-                            </label>
-                            <div class="fieldDescription checkboxFieldDescription">Aucun CSS n'est ajouté : les rangées reprennent le style de ton thème.</div>
-                        </div>
-                        <div class="selectContainer">
-                            <label class="selectLabel">Position</label>
-                            <select is="emby-select" data-key="HomeSectionsPosition">
-                                <option value="Top">Au-dessus des rangées Jellyfin</option>
-                                <option value="Bottom">En dessous des rangées Jellyfin</option>
-                            </select>
                         </div>
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="ShowLatestMovies" />
-                                <span>Rangée « Nouveaux films »</span>
+                                <span>Nouveaux films</span>
                             </label>
                         </div>
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="ShowLatestSeries" />
-                                <span>Rangée « Séries avec de nouveaux épisodes »</span>
+                                <span>Séries avec de nouveaux épisodes</span>
                             </label>
                         </div>
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="ShowCollectionsRow" />
-                                <span>Rangée « Collections par genre »</span>
+                                <span>Collections par genre</span>
                             </label>
                         </div>
                         <div class="checkboxContainer">
@@ -162,35 +103,98 @@
                                 <span>Une rangée par genre</span>
                             </label>
                         </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Nombre maximum de rangées de genre</label>
-                            <input type="number" is="emby-input" min="0" data-key="MaxGenreRows" />
-                        </div>
-                        <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Genres à afficher en premier</label>
-                            <textarea is="emby-textarea" rows="3" data-key="PinnedGenres"></textarea>
-                            <div class="fieldDescription">Un genre par ligne. Les autres suivent, du plus fourni au moins fourni.</div>
-                        </div>
                         <div class="selectContainer">
-                            <label class="selectLabel">Ordre dans les rangées de genre</label>
-                            <select is="emby-select" data-key="GenreRowSort">
-                                <option value="Random">Aléatoire (découverte)</option>
-                                <option value="DateCreated">Derniers ajoutés</option>
-                                <option value="CommunityRating">Mieux notés</option>
-                                <option value="PremiereDate">Plus récents (date de sortie)</option>
+                            <label class="selectLabel">Position</label>
+                            <select is="emby-select" data-key="HomeSectionsPosition">
+                                <option value="Top">Au-dessus des rangées Jellyfin</option>
+                                <option value="Bottom">En dessous des rangées Jellyfin</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <details class="verticalSection">
+                        <summary class="sectionTitle">Réglages avancés</summary>
+
+                        <h3>Collections</h3>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Minimum de titres par genre</label>
+                            <input type="number" is="emby-input" min="1" data-key="MinimumItemsPerGenre" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Minimum de films par saga</label>
+                            <input type="number" is="emby-input" min="2" data-key="MinimumMoviesPerSaga" />
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="SeparateMoviesAndSeries" />
+                                <span>Séparer films et séries</span>
+                            </label>
+                        </div>
+                        <div class="checkboxContainer">
+                            <label class="emby-checkbox-label">
+                                <input type="checkbox" is="emby-checkbox" data-key="RemoveObsoleteCollections" />
+                                <span>Supprimer les collections devenues inutiles</span>
+                            </label>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Nom d'une collection</label>
+                            <input type="text" is="emby-input" data-key="CollectionNameFormat" />
+                            <div class="fieldDescription">{0} = le genre</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Nom (films séparés)</label>
+                            <input type="text" is="emby-input" data-key="MovieCollectionNameFormat" />
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Nom (séries séparées)</label>
+                            <input type="text" is="emby-input" data-key="SeriesCollectionNameFormat" />
+                        </div>
+
+                        <h3>Genres</h3>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Priorité des genres</label>
+                            <textarea is="emby-textarea" rows="5" data-key="GenrePriority"></textarea>
+                            <div class="fieldDescription">Un par ligne. Un titre va dans le premier genre de la liste qu'il possède.</div>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Genres exclus</label>
+                            <textarea is="emby-textarea" rows="3" data-key="ExcludedGenres"></textarea>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Alias</label>
+                            <textarea is="emby-textarea" rows="5" data-key="GenreAliases"></textarea>
+                            <div class="fieldDescription">Source=Cible ou Source=Cible1,Cible2</div>
+                        </div>
+
+                        <h3>Accueil</h3>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Genres en premier</label>
+                            <textarea is="emby-textarea" rows="3" data-key="PinnedGenres"></textarea>
+                        </div>
+                        <div class="inputContainer">
+                            <label class="inputLabel inputLabelUnfocused">Rangées de genre (max)</label>
+                            <input type="number" is="emby-input" min="0" data-key="MaxGenreRows" />
                         </div>
                         <div class="inputContainer">
                             <label class="inputLabel inputLabelUnfocused">Titres par rangée</label>
                             <input type="number" is="emby-input" min="4" max="60" data-key="ItemsPerSection" />
                         </div>
+                        <div class="selectContainer">
+                            <label class="selectLabel">Ordre des rangées de genre</label>
+                            <select is="emby-select" data-key="GenreRowSort">
+                                <option value="Random">Aléatoire</option>
+                                <option value="DateCreated">Derniers ajoutés</option>
+                                <option value="CommunityRating">Mieux notés</option>
+                                <option value="PremiereDate">Date de sortie</option>
+                            </select>
+                        </div>
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="HideWatchedInGenreRows" />
-                                <span>Masquer les titres déjà vus dans les rangées de genre</span>
+                                <span>Masquer les titres déjà vus</span>
                             </label>
                         </div>
-                    </div>
+                    </details>
 
                     <div>
                         <button is="emby-button" type="submit" class="raised button-submit block emby-button">
