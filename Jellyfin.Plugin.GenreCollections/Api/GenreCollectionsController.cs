@@ -118,7 +118,29 @@ public class GenreCollectionsController : ControllerBase
             return dto;
         }
 
-        var collections = GenreCollectionService.GetManagedCollections(_libraryManager)
+        var managed = GenreCollectionService.GetManagedCollections(_libraryManager);
+
+        CollectionRef ToRef(MediaBrowser.Controller.Entities.Movies.BoxSet b) => new()
+        {
+            Id = b.Id.ToString("N", System.Globalization.CultureInfo.InvariantCulture),
+            Name = b.Name,
+            Count = b.GetLinkedChildren().Count(GenreCollectionService.IsOnDisk)
+        };
+
+        // Sagas: the plugin's saga collections plus the TMDb saga collections the user already had.
+        if (config.ShowSagasRow)
+        {
+            dto.Sagas = managed
+                .Where(b => GenreCollectionService.IsSagaKey(b.ProviderIds[Plugin.ProviderKey]))
+                .Concat(GenreCollectionService.GetUserSagaCollections(_libraryManager))
+                .Select(ToRef)
+                .Where(c => c.Count >= Math.Max(2, config.MinimumMoviesPerSaga))
+                .OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        }
+
+        var collections = managed
+            .Where(b => !GenreCollectionService.IsSagaKey(b.ProviderIds[Plugin.ProviderKey]))
             .Select(b => new CollectionRef
             {
                 Id = b.Id.ToString("N", System.Globalization.CultureInfo.InvariantCulture),
@@ -180,6 +202,9 @@ public class GenreCollectionsController : ControllerBase
         /// <summary>Gets or sets a value indicating whether watched items are hidden in genre rows.</summary>
         public bool HideWatchedInGenreRows { get; set; }
 
+        /// <summary>Gets or sets the movie sagas shown in the first row.</summary>
+        public IReadOnlyList<CollectionRef> Sagas { get; set; } = [];
+
         /// <summary>Gets or sets every genre collection.</summary>
         public IReadOnlyList<CollectionRef> Collections { get; set; } = [];
 
@@ -191,7 +216,8 @@ public class GenreCollectionsController : ControllerBase
         {
             ["LatestMovies"] = "Nouveaux films",
             ["LatestSeries"] = "Séries avec de nouveaux épisodes",
-            ["Collections"] = "Collections par genre"
+            ["Collections"] = "Collections par genre",
+            ["Sagas"] = "Films SAGA"
         };
     }
 

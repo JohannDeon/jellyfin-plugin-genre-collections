@@ -88,6 +88,23 @@ public class PluginConfiguration : BasePluginConfiguration
     /// </summary>
     public bool RemoveObsoleteCollections { get; set; } = true;
 
+    // ---------- Sagas ----------
+
+    /// <summary>
+    /// Gets or sets a value indicating whether a collection is created for each movie saga (TMDb collection).
+    /// </summary>
+    public bool EnableSagaCollections { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the minimum number of movies of a saga on the server for it to get a collection.
+    /// </summary>
+    public int MinimumMoviesPerSaga { get; set; } = 2;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the sagas row is shown on the home screen.
+    /// </summary>
+    public bool ShowSagasRow { get; set; } = true;
+
     // ---------- Home screen ----------
 
     /// <summary>

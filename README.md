@@ -20,6 +20,7 @@
 Genre Collections range automatiquement tes **films et séries en collections par genre** (Horreur, Comédie, Action, Animation…) et ajoute sur l'**écran d'accueil** des rangées pour retrouver tes nouveautés et tes contenus sans fouiller dans les dossiers.
 
 - **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Chaque film et chaque série entière (jamais épisode par épisode) va dans **un seul genre**, le plus pertinent, et l'affiche de la collection est celle d'un de ses titres. Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
+- **Sagas de films** : Harry Potter, Hunger Games, Le Seigneur des anneaux… chaque saga a sa collection avec son affiche officielle (TMDb), et une rangée « Films SAGA » en première ligne de l'accueil.
 - **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Collections par genre » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
 - **Compatible avec ton thème** : aucun CSS ajouté. Les rangées reprennent le style de ton thème (Abyss, etc.) comme les rangées natives.
 
@@ -99,6 +100,16 @@ Science Fiction=Science-Fiction
 War & Politics=Guerre
 Guerre & Politique=Guerre
 ```
+
+### Sagas de films
+
+| Option | Par défaut | Description |
+| --- | --- | --- |
+| Créer une collection par saga | Activé | Regroupe les films d'une même saga TMDb (Harry Potter, Hunger Games…). L'affiche officielle de la saga est téléchargée depuis TMDb, sinon celle du premier film est utilisée |
+| Nombre minimum de films par saga | 2 | Une saga n'est créée que si au moins ce nombre de ses films sont sur le serveur |
+| Rangée « Films SAGA » | Activé | Une affiche par saga, en première ligne de l'accueil |
+
+Les sagas sont reconnues grâce aux métadonnées TMDb des films. Si tu as déjà des collections de sagas (par exemple avec l'option Jellyfin « Ajouter automatiquement à une collection »), elles sont réutilisées et pas dupliquées.
 
 ### Écran d'accueil
 

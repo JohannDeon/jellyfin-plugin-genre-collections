@@ -137,3 +137,31 @@ public class GenrePriorityTests
         Assert.Equal(new[] { "Horreur", "Kung-fu", "Policier" }, rules.OrderByRelevance(new[] { "Kung-fu", "Policier", "Horreur" }));
     }
 }
+
+public class SagaGroupingTests
+{
+    private static SagaCandidate M(int id, string? saga, string? name, int year)
+        => new(new System.Guid(id, 0, 0, new byte[8]), saga, name, new System.DateTime(year, 1, 1));
+
+    [Fact]
+    public void GroupsMoviesOfTheSameSagaInReleaseOrder()
+    {
+        var movies = new[]
+        {
+            M(2, "1241", "Harry Potter - Saga", 2002),
+            M(1, "1241", "Harry Potter - Saga", 2001),
+            M(3, "131635", "Hunger Games - Saga", 2012),
+            M(4, null, null, 2010),
+        };
+        var sagas = SagaGrouping.Group(movies, 2);
+        var hp = Assert.Single(sagas);
+        Assert.Equal("Harry Potter - Saga", hp.Name);
+        Assert.Equal(new[] { movies[1].ItemId, movies[0].ItemId }, hp.ItemIds);
+    }
+
+    [Fact]
+    public void NeedsAtLeastTwoMovies()
+    {
+        Assert.Empty(SagaGrouping.Group(new[] { M(1, "10", "Solo", 2000) }, 1));
+    }
+}

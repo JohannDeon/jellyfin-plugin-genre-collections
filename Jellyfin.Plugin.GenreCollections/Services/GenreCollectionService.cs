@@ -21,6 +21,11 @@ namespace Jellyfin.Plugin.GenreCollections.Services;
 /// </summary>
 public class GenreCollectionService
 {
+    /// <summary>
+    /// Key prefix of saga collections.
+    /// </summary>
+    public const string SagaPrefix = "saga:";
+
     private static readonly SemaphoreSlim SyncLock = new(1, 1);
 
     private readonly ILibraryManager _libraryManager;
@@ -77,9 +82,9 @@ public class GenreCollectionService
     public async Task SyncAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
         var config = Plugin.Instance?.Configuration ?? new PluginConfiguration();
-        if (!config.EnableGenreCollections)
+        if (!config.EnableGenreCollections && !config.EnableSagaCollections)
         {
-            _logger.LogInformation("Genre collections are disabled, nothing to do");
+            _logger.LogInformation("Genre and saga collections are disabled, nothing to do");
             progress.Report(100);
             return;
         }
@@ -97,8 +102,24 @@ public class GenreCollectionService
 
     private async Task SyncInternalAsync(PluginConfiguration config, IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var rules = new GenreRules(config.GenreAliases, config.ExcludedGenres, config.GenrePriority);
-        var desired = BuildDesiredCollections(config, rules);
+        var desired = new Dictionary<string, TargetCollection>(StringComparer.OrdinalIgnoreCase);
+        if (config.EnableGenreCollections)
+        {
+            var rules = new GenreRules(config.GenreAliases, config.ExcludedGenres, config.GenrePriority);
+            foreach (var (key, target) in BuildDesiredCollections(config, rules))
+            {
+                desired[key] = target;
+            }
+        }
+
+        if (config.EnableSagaCollections)
+        {
+            foreach (var (key, target) in BuildDesiredSagas(config))
+            {
+                desired[key] = target;
+            }
+        }
+
         progress.Report(10);
 
         var existing = GetManagedCollections(_libraryManager);
@@ -118,6 +139,7 @@ public class GenreCollectionService
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            var isSaga = IsSagaKey(key);
             if (existingByKey.TryGetValue(key, out var boxSet))
             {
                 if (await UpdateCollectionAsync(boxSet, target, cancellationToken).ConfigureAwait(false))
@@ -126,6 +148,12 @@ public class GenreCollectionService
                 }
 
                 existingByKey.Remove(key);
+
+                if (isSaga)
+                {
+                    // Official saga poster comes from TMDb; fall back to the first movie's poster if there is none.
+                    await EnsureSagaPosterAsync(boxSet, target, cancellationToken).ConfigureAwait(false);
+                }
             }
             else
             {
@@ -133,7 +161,10 @@ public class GenreCollectionService
                 created++;
             }
 
-            await EnsureLockedWithPosterAsync(boxSet, target, cancellationToken).ConfigureAwait(false);
+            if (!isSaga)
+            {
+                await EnsureLockedWithPosterAsync(boxSet, target, cancellationToken).ConfigureAwait(false);
+            }
 
             done++;
             progress.Report(10 + (80.0 * done / Math.Max(1, desired.Count)));
@@ -141,7 +172,9 @@ public class GenreCollectionService
 
         if (config.RemoveObsoleteCollections)
         {
-            foreach (var obsolete in existingByKey.Values)
+            foreach (var obsolete in existingByKey
+                .Where(kv => IsSagaKey(kv.Key) ? config.EnableSagaCollections : config.EnableGenreCollections)
+                .Select(kv => kv.Value))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 _logger.LogInformation("Removing obsolete genre collection {Name}", obsolete.Name);
@@ -157,6 +190,98 @@ public class GenreCollectionService
             removed,
             desired.Count);
         progress.Report(100);
+    }
+
+    /// <summary>
+    /// Returns true for the key of a saga collection.
+    /// </summary>
+    /// <param name="key">Collection key.</param>
+    /// <returns>True if the key is a saga key.</returns>
+    public static bool IsSagaKey(string key) => key.StartsWith(SagaPrefix, StringComparison.OrdinalIgnoreCase);
+
+    private Dictionary<string, TargetCollection> BuildDesiredSagas(PluginConfiguration config)
+    {
+        var movies = _libraryManager.GetItemList(new InternalItemsQuery
+            {
+                IncludeItemTypes = [BaseItemKind.Movie],
+                Recursive = true,
+                IsVirtualItem = false
+            })
+            .OfType<Movie>()
+            .Where(IsOnDisk)
+            .Select(m => new SagaCandidate(m.Id, m.GetProviderId(MetadataProvider.TmdbCollection), m.CollectionName, m.PremiereDate))
+            .ToList();
+
+        // A saga the user already has as a collection (e.g. Jellyfin's "automatically add to collection") is not duplicated.
+        var alreadyThere = GetUserSagaCollections(_libraryManager)
+            .Select(b => b.GetProviderId(MetadataProvider.TmdbCollection))
+            .Where(id => !string.IsNullOrEmpty(id))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var desired = new Dictionary<string, TargetCollection>(StringComparer.OrdinalIgnoreCase);
+        foreach (var saga in SagaGrouping.Group(movies, config.MinimumMoviesPerSaga))
+        {
+            if (alreadyThere.Contains(saga.TmdbCollectionId))
+            {
+                continue;
+            }
+
+            var target = new TargetCollection(saga.Name) { TmdbCollectionId = saga.TmdbCollectionId };
+            target.ItemIds.UnionWith(saga.ItemIds);
+            desired[SagaPrefix + saga.TmdbCollectionId] = target;
+        }
+
+        return desired;
+    }
+
+    /// <summary>
+    /// Returns the collections not created by this plugin that are TMDb sagas.
+    /// </summary>
+    /// <param name="libraryManager">Library manager.</param>
+    /// <returns>User saga collections.</returns>
+    public static IReadOnlyList<BoxSet> GetUserSagaCollections(ILibraryManager libraryManager)
+    {
+        return libraryManager.GetItemList(new InternalItemsQuery
+            {
+                IncludeItemTypes = [BaseItemKind.BoxSet],
+                Recursive = true
+            })
+            .OfType<BoxSet>()
+            .Where(b => b.ProviderIds is null || !b.ProviderIds.ContainsKey(Plugin.ProviderKey))
+            .Where(b => !string.IsNullOrEmpty(b.GetProviderId(MetadataProvider.TmdbCollection)))
+            .ToList();
+    }
+
+    private async Task EnsureSagaPosterAsync(BoxSet boxSet, TargetCollection target, CancellationToken cancellationToken)
+    {
+        if (boxSet.HasImage(ImageType.Primary, 0))
+        {
+            return;
+        }
+
+        var first = target.ItemIds
+            .Select(id => _libraryManager.GetItemById(id))
+            .Where(item => item is not null && item.HasImage(ImageType.Primary, 0))
+            .OrderBy(item => item!.PremiereDate ?? DateTime.MaxValue)
+            .FirstOrDefault();
+        if (first is null)
+        {
+            return;
+        }
+
+        var image = first.GetImageInfo(ImageType.Primary, 0);
+        boxSet.SetImage(
+            new ItemImageInfo
+            {
+                Path = image.Path,
+                Type = ImageType.Primary,
+                DateModified = image.DateModified,
+                Width = image.Width,
+                Height = image.Height,
+                BlurHash = image.BlurHash
+            },
+            0);
+        await boxSet.UpdateToRepositoryAsync(ItemUpdateType.ImageUpdate, cancellationToken).ConfigureAwait(false);
     }
 
     private Dictionary<string, TargetCollection> BuildDesiredCollections(PluginConfiguration config, GenreRules rules)
@@ -330,15 +455,20 @@ public class GenreCollectionService
 
     private async Task<BoxSet> CreateCollectionAsync(string key, TargetCollection target)
     {
-        _logger.LogInformation("Creating genre collection {Name} with {Count} items", target.Name, target.ItemIds.Count);
+        _logger.LogInformation("Creating collection {Name} with {Count} items", target.Name, target.ItemIds.Count);
 
         var options = new CollectionCreationOptions
         {
             Name = target.Name,
-            IsLocked = true,
+            // Sagas stay unlocked so Jellyfin downloads the official saga poster from TMDb.
+            IsLocked = target.TmdbCollectionId is null,
             ItemIdList = target.ItemIds.Select(id => id.ToString("N", CultureInfo.InvariantCulture)).ToArray()
         };
         options.ProviderIds[Plugin.ProviderKey] = key;
+        if (target.TmdbCollectionId is not null)
+        {
+            options.ProviderIds[MetadataProvider.TmdbCollection.ToString()] = target.TmdbCollectionId;
+        }
 
         var boxSet = await _collectionManager.CreateCollectionAsync(options).ConfigureAwait(false);
 
@@ -401,5 +531,7 @@ public class GenreCollectionService
         public string Name { get; }
 
         public HashSet<Guid> ItemIds { get; } = [];
+
+        public string? TmdbCollectionId { get; init; }
     }
 }
