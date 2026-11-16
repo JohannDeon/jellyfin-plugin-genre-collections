@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/JohannDeon/jellyfin-plugin-genre-collections/main/assets/logo.png",
     "versions": [
       {
+        "version": "1.2.1.0",
+        "changelog": "Voir https://github.com/JohannDeon/jellyfin-plugin-genre-collections/releases/tag/v1.2.1",
+        "targetAbi": "12.0.0.0",
+        "sourceUrl": "https://github.com/JohannDeon/jellyfin-plugin-genre-collections/releases/download/v1.2.1/genre-collections_1.2.1.0.zip",
+        "checksum": "f3b9a5e290a1a326f06eb0b8c3527c73",
+        "timestamp": "2026-11-16T10:54:43Z"
+      },
+      {
         "version": "1.2.0.0",
         "changelog": "Voir https://github.com/JohannDeon/jellyfin-plugin-genre-collections/releases/tag/v1.2.0",
         "targetAbi": "12.0.0.0",
