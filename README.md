@@ -21,7 +21,7 @@ Genre Collections range automatiquement tes **films et séries en collections pa
 
 - **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Chaque film et chaque série entière (jamais épisode par épisode) va dans **un seul genre**, le plus pertinent, et l'affiche de la collection est celle d'un de ses titres. Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
 - **Sagas de films** : Harry Potter, Hunger Games, Le Seigneur des anneaux… chaque saga a sa collection avec son affiche officielle (TMDb), et une rangée « Films SAGA » en première ligne de l'accueil.
-- **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Collections par genre » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
+- **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Tous les films », « Toutes les séries », « Collections par genre » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
 - **Compatible avec ton thème** : aucun CSS ajouté. Les rangées reprennent le style de ton thème (Abyss, etc.) comme les rangées natives.
 
 Fonctionne avec **Jellyfin 12.x**.
@@ -118,6 +118,7 @@ Les sagas sont reconnues grâce aux métadonnées TMDb des films. Si tu as déj�
 | Ajouter des rangées sur l'écran d'accueil | Activé | Active ou coupe toutes les rangées |
 | Position | Au-dessus | Au-dessus ou en dessous des rangées Jellyfin (« Reprendre », « À suivre »…) |
 | Nouveaux films / Séries avec de nouveaux épisodes | Activé | Rangées des nouveautés |
+| Tous les films / Toutes les séries | Activé | Toute la bibliothèque de A à Z ; le titre de la rangée ouvre la liste complète |
 | Collections par genre | Activé | Rangée listant toutes les collections de genre |
 | Une rangée par genre | Activé | Une rangée de titres par genre |
 | Nombre maximum de rangées de genre | 6 | Limite le nombre de rangées de genre |
