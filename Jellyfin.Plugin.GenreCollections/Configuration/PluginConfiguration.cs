@@ -128,6 +128,16 @@ public class PluginConfiguration : BasePluginConfiguration
     public bool ShowLatestSeries { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets a value indicating whether the "all movies" row is shown.
+    /// </summary>
+    public bool ShowAllMovies { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the "all series" row is shown.
+    /// </summary>
+    public bool ShowAllSeries { get; set; } = true;
+
+    /// <summary>
     /// Gets or sets a value indicating whether the row listing every genre collection is shown.
     /// </summary>
     public bool ShowCollectionsRow { get; set; } = true;

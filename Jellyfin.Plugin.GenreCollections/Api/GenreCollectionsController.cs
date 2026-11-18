@@ -100,6 +100,8 @@ public class GenreCollectionsController : ControllerBase
             Position = string.Equals(config.HomeSectionsPosition, "Bottom", StringComparison.OrdinalIgnoreCase) ? "Bottom" : "Top",
             ShowLatestMovies = config.ShowLatestMovies,
             ShowLatestSeries = config.ShowLatestSeries,
+            ShowAllMovies = config.ShowAllMovies,
+            ShowAllSeries = config.ShowAllSeries,
             ShowCollectionsRow = config.ShowCollectionsRow,
             ShowGenreRows = config.ShowGenreRows,
             ItemsPerSection = Math.Clamp(config.ItemsPerSection, 4, 60),
@@ -187,6 +189,12 @@ public class GenreCollectionsController : ControllerBase
         /// <summary>Gets or sets a value indicating whether the new series row is shown.</summary>
         public bool ShowLatestSeries { get; set; }
 
+        /// <summary>Gets or sets a value indicating whether the all movies row is shown.</summary>
+        public bool ShowAllMovies { get; set; }
+
+        /// <summary>Gets or sets a value indicating whether the all series row is shown.</summary>
+        public bool ShowAllSeries { get; set; }
+
         /// <summary>Gets or sets a value indicating whether the collections row is shown.</summary>
         public bool ShowCollectionsRow { get; set; }
 
@@ -217,7 +225,9 @@ public class GenreCollectionsController : ControllerBase
             ["LatestMovies"] = "Nouveaux films",
             ["LatestSeries"] = "Séries avec de nouveaux épisodes",
             ["Collections"] = "Collections par genre",
-            ["Sagas"] = "Films SAGA"
+            ["Sagas"] = "Films SAGA",
+            ["AllMovies"] = "Tous les films",
+            ["AllSeries"] = "Toutes les séries"
         };
     }
 

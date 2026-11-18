@@ -170,6 +170,29 @@
             }));
         }
 
+        // Whole library, A to Z; the title opens the full list.
+        if (config.ShowAllMovies) {
+            jobs.push(fetchItems(apiClient, {
+                IncludeItemTypes: 'Movie',
+                SortBy: 'SortName',
+                SortOrder: 'Ascending',
+                Limit: limit
+            }).then(function (items) {
+                return { title: config.Labels.AllMovies, link: '#/list?type=Movie&serverId=' + encodeURIComponent(serverId), items: items };
+            }));
+        }
+
+        if (config.ShowAllSeries) {
+            jobs.push(fetchItems(apiClient, {
+                IncludeItemTypes: 'Series',
+                SortBy: 'SortName',
+                SortOrder: 'Ascending',
+                Limit: limit
+            }).then(function (items) {
+                return { title: config.Labels.AllSeries, link: '#/list?type=Series&serverId=' + encodeURIComponent(serverId), items: items };
+            }));
+        }
+
         if (config.ShowCollectionsRow && config.Collections.length) {
             var ids = config.Collections.map(function (c) { return c.Id; }).join(',');
             jobs.push(fetchItems(apiClient, {
