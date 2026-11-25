@@ -14,7 +14,7 @@
                         <div class="sectionTitleContainer">
                             <h2 class="sectionTitle">Genre Collections</h2>
                         </div>
-                        <p class="fieldDescription">Range tes films et séries par genre et par saga, et ajoute des rangées sur l'accueil.</p>
+                        <p class="fieldDescription">Classe tes films et séries par genre et par saga, et ajoute des rangées sur l'accueil. Les séries restent des séries normales : un clic ouvre leurs saisons et épisodes.</p>
                         <div>
                             <button is="emby-button" type="button" id="GenreCollectionsSyncNow" class="raised button-submit emby-button">
                                 <span>Synchroniser maintenant</span>
@@ -30,7 +30,7 @@
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="EnableGenreCollections" />
-                                <span>Collections par genre</span>
+                                <span>Classer par genre (rangées de l'accueil)</span>
                             </label>
                         </div>
                         <div class="checkboxContainer">
@@ -106,7 +106,7 @@
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="ShowCollectionsRow" />
-                                <span>Collections par genre</span>
+                                <span>Genres</span>
                             </label>
                         </div>
                         <div class="checkboxContainer">
@@ -145,20 +145,20 @@
                         <div class="checkboxContainer">
                             <label class="emby-checkbox-label">
                                 <input type="checkbox" is="emby-checkbox" data-key="RemoveObsoleteCollections" />
-                                <span>Supprimer les collections devenues inutiles</span>
+                                <span>Supprimer les sagas devenues inutiles</span>
                             </label>
                         </div>
                         <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Nom d'une collection</label>
+                            <label class="inputLabel inputLabelUnfocused">Titre d'une rangée de genre</label>
                             <input type="text" is="emby-input" data-key="CollectionNameFormat" />
                             <div class="fieldDescription">{0} = le genre</div>
                         </div>
                         <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Nom (films séparés)</label>
+                            <label class="inputLabel inputLabelUnfocused">Titre (films séparés)</label>
                             <input type="text" is="emby-input" data-key="MovieCollectionNameFormat" />
                         </div>
                         <div class="inputContainer">
-                            <label class="inputLabel inputLabelUnfocused">Nom (séries séparées)</label>
+                            <label class="inputLabel inputLabelUnfocused">Titre (séries séparées)</label>
                             <input type="text" is="emby-input" data-key="SeriesCollectionNameFormat" />
                         </div>
 

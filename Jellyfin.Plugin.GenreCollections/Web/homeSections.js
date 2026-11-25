@@ -120,7 +120,11 @@
         };
         for (var key in query) {
             if (Object.prototype.hasOwnProperty.call(query, key)) {
-                base[key] = query[key];
+                if (query[key] === null) {
+                    delete base[key];
+                } else {
+                    base[key] = query[key];
+                }
             }
         }
         return apiClient.getItems(apiClient.getCurrentUserId(), base)
@@ -195,9 +199,12 @@
 
         if (config.ShowCollectionsRow && config.Collections.length) {
             var ids = config.Collections.map(function (c) { return c.Id; }).join(',');
+            // Native Jellyfin genres: each card opens the genre page (its movies and series).
             jobs.push(fetchItems(apiClient, {
                 Ids: ids,
                 Recursive: false,
+                IsMissing: null,
+                LocationTypes: null,
                 SortBy: 'SortName',
                 SortOrder: 'Ascending'
             }).then(function (items) {
@@ -206,11 +213,14 @@
         }
 
         if (config.ShowGenreRows) {
-            config.GenreRows.forEach(function (collection) {
-                // Only the collection's own titles (movies and whole series):
-                // a recursive query would also return the episodes and seasons inside each series.
+            config.GenreRows.forEach(function (genre) {
+                if (!genre.ItemIds || !genre.ItemIds.length) {
+                    return;
+                }
+                // Plain movies and series (never episodes or collections): every card opens the normal
+                // movie / series page, with its seasons and episodes.
                 var query = {
-                    ParentId: collection.Id,
+                    Ids: genre.ItemIds.join(','),
                     Recursive: false,
                     IncludeItemTypes: 'Movie,Series',
                     SortBy: config.GenreRowSort === 'Random' ? 'Random' : (config.GenreRowSort + ',SortName'),
@@ -222,8 +232,8 @@
                 }
                 jobs.push(fetchItems(apiClient, query).then(function (items) {
                     return {
-                        title: collection.Name,
-                        link: '#/details?id=' + encodeURIComponent(collection.Id) + '&serverId=' + encodeURIComponent(serverId),
+                        title: genre.Name,
+                        link: genre.GenreId ? '#/details?id=' + encodeURIComponent(genre.GenreId) + '&serverId=' + encodeURIComponent(serverId) : null,
                         items: items
                     };
                 }));
