@@ -1,6 +1,6 @@
 name: "Genre Collections"
 guid: "51657d44-7198-4c95-b99d-afef3045fad9"
-version: "1.2.0.0"
+version: "1.3.0.0"
 targetAbi: "12.0.0.0"
 framework: "net10.0"
 overview: "Collections automatiques par genre et rangées d'accueil"
@@ -14,4 +14,4 @@ owner: "JohannDeon"
 artifacts:
 - "Jellyfin.Plugin.GenreCollections.dll"
 changelog: >
-  Sagas de films (Harry Potter, Hunger Games...) : une collection par saga avec son affiche officielle et une rangée « Films SAGA » en première ligne de l'accueil.
+  Les genres ne sont plus des collections : les séries s'ouvrent normalement (saisons, épisodes) même avec « Grouper dans les collections ». Les anciennes collections de genre sont supprimées à la première synchronisation.

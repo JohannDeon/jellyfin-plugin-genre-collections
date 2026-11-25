@@ -27,6 +27,11 @@ public class GenreCollectionService
     public const string SagaPrefix = "saga:";
 
     private static readonly SemaphoreSlim SyncLock = new(1, 1);
+    private static readonly object IndexLock = new();
+
+    private IReadOnlyList<GenreGroup>? _genreIndex;
+    private DateTime _genreIndexTime;
+    private PluginConfiguration? _genreIndexConfig;
 
     private readonly ILibraryManager _libraryManager;
     private readonly ICollectionManager _collectionManager;
@@ -82,13 +87,6 @@ public class GenreCollectionService
     public async Task SyncAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
         var config = Plugin.Instance?.Configuration ?? new PluginConfiguration();
-        if (!config.EnableGenreCollections && !config.EnableSagaCollections)
-        {
-            _logger.LogInformation("Genre and saga collections are disabled, nothing to do");
-            progress.Report(100);
-            return;
-        }
-
         await SyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -102,16 +100,14 @@ public class GenreCollectionService
 
     private async Task SyncInternalAsync(PluginConfiguration config, IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var desired = new Dictionary<string, TargetCollection>(StringComparer.OrdinalIgnoreCase);
-        if (config.EnableGenreCollections)
-        {
-            var rules = new GenreRules(config.GenreAliases, config.ExcludedGenres, config.GenrePriority);
-            foreach (var (key, target) in BuildDesiredCollections(config, rules))
-            {
-                desired[key] = target;
-            }
-        }
+        // Genres are no longer stored as collections: with Jellyfin's "group into collections" setting,
+        // a series inside a collection disappears from the TV library and its seasons/episodes become hard to reach.
+        // Genres are now an index used by the home rows (and native genre pages); only sagas are collections.
+        InvalidateGenreIndex();
+        var groups = GetGenreIndex(config);
+        await EnsureGenreImagesAsync(groups, cancellationToken).ConfigureAwait(false);
 
+        var desired = new Dictionary<string, TargetCollection>(StringComparer.OrdinalIgnoreCase);
         if (config.EnableSagaCollections)
         {
             foreach (var (key, target) in BuildDesiredSagas(config))
@@ -161,35 +157,116 @@ public class GenreCollectionService
                 created++;
             }
 
-            if (!isSaga)
-            {
-                await EnsureLockedWithPosterAsync(boxSet, target, cancellationToken).ConfigureAwait(false);
-            }
-
             done++;
             progress.Report(10 + (80.0 * done / Math.Max(1, desired.Count)));
         }
 
-        if (config.RemoveObsoleteCollections)
+        // Old genre collections (plugin <= 1.2) are always removed; obsolete sagas only if the option is on.
+        foreach (var obsolete in existingByKey
+            .Where(kv => !IsSagaKey(kv.Key) || (config.RemoveObsoleteCollections && config.EnableSagaCollections))
+            .Select(kv => kv.Value))
         {
-            foreach (var obsolete in existingByKey
-                .Where(kv => IsSagaKey(kv.Key) ? config.EnableSagaCollections : config.EnableGenreCollections)
-                .Select(kv => kv.Value))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                _logger.LogInformation("Removing obsolete genre collection {Name}", obsolete.Name);
-                _libraryManager.DeleteItem(obsolete, new DeleteOptions { DeleteFileLocation = true }, true);
-                removed++;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
+            _logger.LogInformation("Removing collection {Name}", obsolete.Name);
+            _libraryManager.DeleteItem(obsolete, new DeleteOptions { DeleteFileLocation = true }, true);
+            removed++;
         }
 
         _logger.LogInformation(
-            "Genre collections synced: {Created} created, {Updated} updated, {Removed} removed, {Total} total",
+            "Genre Collections synced: {Created} sagas created, {Updated} updated, {Removed} collections removed, {Total} sagas",
             created,
             updated,
             removed,
             desired.Count);
         progress.Report(100);
+    }
+
+    /// <summary>
+    /// Returns the genre groups used by the home screen (cached for a few minutes).
+    /// </summary>
+    /// <param name="config">Plugin configuration.</param>
+    /// <returns>Genre groups, biggest first.</returns>
+    public IReadOnlyList<GenreGroup> GetGenreIndex(PluginConfiguration config)
+    {
+        lock (IndexLock)
+        {
+            // Saving the settings replaces the configuration object, which also invalidates the cache.
+            if (_genreIndex is not null && ReferenceEquals(_genreIndexConfig, config) && DateTime.UtcNow - _genreIndexTime < TimeSpan.FromMinutes(10))
+            {
+                return _genreIndex;
+            }
+        }
+
+        var groups = new List<GenreGroup>();
+        if (config.EnableGenreCollections)
+        {
+            var rules = new GenreRules(config.GenreAliases, config.ExcludedGenres, config.GenrePriority);
+            foreach (var (key, target) in BuildDesiredCollections(config, rules))
+            {
+                var genreId = _libraryManager.GetGenreId(target.Genre);
+                var genreExists = _libraryManager.GetItemById(genreId) is not null;
+                groups.Add(new GenreGroup(key, target.Name, target.Genre, genreExists ? genreId : null, target.ItemIds.ToList()));
+            }
+        }
+
+        groups = groups.OrderByDescending(g => g.ItemIds.Count).ToList();
+        lock (IndexLock)
+        {
+            _genreIndex = groups;
+            _genreIndexConfig = config;
+            _genreIndexTime = DateTime.UtcNow;
+        }
+
+        return groups;
+    }
+
+    /// <summary>
+    /// Forgets the cached genre index (after a sync or a configuration change).
+    /// </summary>
+    public void InvalidateGenreIndex()
+    {
+        lock (IndexLock)
+        {
+            _genreIndex = null;
+        }
+    }
+
+    /// <summary>
+    /// Gives each native genre without an image the poster of its best rated title, so genre cards are not blank.
+    /// </summary>
+    private async Task EnsureGenreImagesAsync(IReadOnlyList<GenreGroup> groups, CancellationToken cancellationToken)
+    {
+        foreach (var group in groups)
+        {
+            if (group.GenreId is null || _libraryManager.GetItemById(group.GenreId.Value) is not { } genre || genre.HasImage(ImageType.Primary, 0))
+            {
+                continue;
+            }
+
+            var cover = group.ItemIds
+                .Select(id => _libraryManager.GetItemById(id))
+                .Where(item => item is not null && item.HasImage(ImageType.Primary, 0))
+                .OrderByDescending(item => item!.CommunityRating ?? 0)
+                .FirstOrDefault();
+            if (cover is null)
+            {
+                continue;
+            }
+
+            var image = cover.GetImageInfo(ImageType.Primary, 0);
+            genre.SetImage(
+                new ItemImageInfo
+                {
+                    Path = image.Path,
+                    Type = ImageType.Primary,
+                    DateModified = image.DateModified,
+                    Width = image.Width,
+                    Height = image.Height,
+                    BlurHash = image.BlurHash
+                },
+                0);
+            await genre.UpdateToRepositoryAsync(ItemUpdateType.ImageUpdate, cancellationToken).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -335,7 +412,7 @@ public class GenreCollectionService
         foreach (var (key, target) in GenreAssignment.Assign(candidates, config.MinimumItemsPerGenre))
         {
             var scope = key[..key.IndexOf(':', StringComparison.Ordinal)];
-            var collection = new TargetCollection(FormatName(formats[scope], target.Genre));
+            var collection = new TargetCollection(FormatName(formats[scope], target.Genre)) { Genre = target.Genre };
             collection.ItemIds.UnionWith(target.ItemIds);
             desired[key] = collection;
         }
@@ -401,55 +478,6 @@ public class GenreCollectionService
         catch (FormatException)
         {
             return genre;
-        }
-    }
-
-    /// <summary>
-    /// Locks the collection so internet metadata providers (TMDb collections) never give it an unrelated
-    /// name or poster, and uses the poster of one of its own titles (the best rated one) as its image.
-    /// </summary>
-    private async Task EnsureLockedWithPosterAsync(BoxSet boxSet, TargetCollection target, CancellationToken cancellationToken)
-    {
-        var changed = false;
-        if (!boxSet.IsLocked)
-        {
-            boxSet.IsLocked = true;
-            changed = true;
-        }
-
-        var cover = target.ItemIds
-            .Select(id => _libraryManager.GetItemById(id))
-            .Where(item => item is not null && item.HasImage(ImageType.Primary, 0))
-            .OrderByDescending(item => item!.CommunityRating ?? 0)
-            .ThenByDescending(item => item!.DateCreated)
-            .FirstOrDefault();
-
-        if (cover is not null)
-        {
-            var image = cover.GetImageInfo(ImageType.Primary, 0);
-            var current = boxSet.HasImage(ImageType.Primary, 0) ? boxSet.GetImageInfo(ImageType.Primary, 0) : null;
-            var stillValid = current is not null
-                && target.ItemIds.Any(id => string.Equals(_libraryManager.GetItemById(id)?.GetImageInfo(ImageType.Primary, 0)?.Path, current.Path, StringComparison.Ordinal));
-            if (!stillValid)
-            {
-                boxSet.SetImage(
-                    new ItemImageInfo
-                    {
-                        Path = image.Path,
-                        Type = ImageType.Primary,
-                        DateModified = image.DateModified,
-                        Width = image.Width,
-                        Height = image.Height,
-                        BlurHash = image.BlurHash
-                    },
-                    0);
-                changed = true;
-            }
-        }
-
-        if (changed)
-        {
-            await boxSet.UpdateToRepositoryAsync(ItemUpdateType.ImageUpdate, cancellationToken).ConfigureAwait(false);
         }
     }
 
@@ -533,5 +561,17 @@ public class GenreCollectionService
         public HashSet<Guid> ItemIds { get; } = [];
 
         public string? TmdbCollectionId { get; init; }
+
+        public string Genre { get; init; } = string.Empty;
     }
 }
+
+/// <summary>
+/// A genre and the titles shown under it on the home screen.
+/// </summary>
+/// <param name="Key">Stable key.</param>
+/// <param name="Name">Row title.</param>
+/// <param name="Genre">Genre name.</param>
+/// <param name="GenreId">Native Jellyfin genre item, if it exists.</param>
+/// <param name="ItemIds">Movies and series of this genre.</param>
+public sealed record GenreGroup(string Key, string Name, string Genre, Guid? GenreId, IReadOnlyList<Guid> ItemIds);

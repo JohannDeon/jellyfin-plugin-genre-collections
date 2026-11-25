@@ -3,7 +3,7 @@
 <h1 align="center">Genre Collections pour Jellyfin</h1>
 
 <p align="center">
-  Des collections automatiques par genre et un écran d'accueil qui met en avant tes films et séries.
+  Un accueil façon Netflix : tes films et séries classés par genre et par saga, sans rien casser dans ta bibliothèque.
 </p>
 
 <p align="center">
@@ -17,14 +17,16 @@
 
 ## C'est quoi ?
 
-Genre Collections range automatiquement tes **films et séries en collections par genre** (Horreur, Comédie, Action, Animation…) et ajoute sur l'**écran d'accueil** des rangées pour retrouver tes nouveautés et tes contenus sans fouiller dans les dossiers.
+Genre Collections classe automatiquement tes **films et séries par genre** (Horreur, Comédie, Action, Animation…) et par **saga**, et ajoute sur l'**écran d'accueil** des rangées pour retrouver tes nouveautés et tes contenus sans fouiller dans les dossiers. Un clic sur une série ouvre sa page Jellyfin normale, avec ses saisons et ses épisodes.
 
-- **Collections par genre** : une collection par genre, créée à partir des métadonnées (TMDb, NFO…). Chaque film et chaque série entière (jamais épisode par épisode) va dans **un seul genre**, le plus pertinent, et l'affiche de la collection est celle d'un de ses titres. Elles se mettent à jour toutes seules après chaque scan de bibliothèque et chaque nuit. Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Tes collections faites à la main ne sont jamais touchées.
+- **Classement par genre** : chaque film et chaque série entière (jamais épisode par épisode) va dans **un seul genre**, le plus pertinent, à partir des métadonnées (TMDb, NFO…). Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Le classement se met à jour tout seul après chaque scan. Les genres ne sont **pas** des collections : ta bibliothèque de séries reste intacte, même avec l'option Jellyfin « Grouper dans les collections ».
 - **Sagas de films** : Harry Potter, Hunger Games, Le Seigneur des anneaux… chaque saga a sa collection avec son affiche officielle (TMDb), et une rangée « Films SAGA » en première ligne de l'accueil.
-- **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Tous les films », « Toutes les séries », « Collections par genre » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
+- **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Tous les films », « Toutes les séries », « Genres » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
 - **Compatible avec ton thème** : aucun CSS ajouté. Les rangées reprennent le style de ton thème (Abyss, etc.) comme les rangées natives.
 
 Fonctionne avec **Jellyfin 12.x**.
+
+> **Mise à jour depuis la 1.2** : jusqu'ici, les genres étaient des collections Jellyfin. Avec l'option « Grouper dans les collections », les séries disparaissaient de la bibliothèque Séries et il devenait difficile d'ouvrir une saison ou un épisode. Depuis la 1.3, les anciennes collections de genre sont supprimées automatiquement à la première synchronisation, et seules les sagas restent des collections.
 
 ## Installation
 
@@ -60,35 +62,35 @@ Les mises à jour apparaissent ensuite automatiquement dans le catalogue.
 ## Guide d'utilisation
 
 1. Va dans `Tableau de bord -> Extensions -> Mes extensions -> Genre Collections -> Paramètres`.
-1. Choisis ce que tu veux ranger : films, séries, ou les deux, en collections mixtes ou séparées (« Horreur (Films) » / « Horreur (Séries) »).
+1. Choisis ce que tu veux classer : films, séries, ou les deux, en rangées mixtes ou séparées (« Horreur (Films) » / « Horreur (Séries) »).
 1. Si besoin, ajoute des **genres exclus** (un par ligne) et des **alias** pour fusionner des genres :
     - `Science Fiction=Science-Fiction` : fusionne deux orthographes
     - `Action & Adventure=Action,Aventure` : découpe un genre de série en deux
 1. Dans la partie **Écran d'accueil**, choisis les rangées à afficher, leur position (au-dessus ou en dessous de « Reprendre » / « À suivre ») et les genres à mettre en premier.
 1. Clique sur **Enregistrer**.
 1. Clique sur **Synchroniser maintenant**.
-1. Et voilà ! Tes collections apparaissent dans la bibliothèque **Collections**, et les nouvelles rangées sur l'accueil. Si l'accueil ne change pas, recharge la page (Ctrl + F5).
+1. Et voilà ! Les sagas apparaissent dans la bibliothèque **Collections**, et les nouvelles rangées sur l'accueil. Si l'accueil ne change pas, recharge la page (Ctrl + F5).
 1. À noter : la tâche **Mettre à jour les collections par genre** est aussi disponible dans `Tableau de bord -> Tâches planifiées`.
 
 ## Configuration
 
-### Collections
+### Classement par genre
 
 | Option | Par défaut | Description |
 | --- | --- | --- |
-| Créer et mettre à jour les collections | Activé | Active ou coupe la gestion des collections |
+| Classer par genre | Activé | Active ou coupe le classement par genre (rangées de l'accueil) |
 | Inclure les films / les séries | Activé / Activé | Types de contenus rangés |
-| Une seule collection par série | Activé | La série entière va uniquement dans son genre le plus pertinent |
-| Une seule collection par film | Activé | Même principe pour les films |
+| Un seul genre par série | Activé | La série entière va uniquement dans son genre le plus pertinent |
+| Un seul genre par film | Activé | Même principe pour les films |
 | Priorité des genres | Animation, Documentaire, Horreur, Science-Fiction, Fantastique, Western, Guerre, Familial, Musique, Thriller, Crime, Mystère, Action, Aventure, Comédie, Romance, Histoire, Drame | Choisit le genre le plus pertinent : le premier de la liste que possède le titre (un film « Drame, Horreur » va dans Horreur) |
-| Séparer films et séries | Désactivé | Une collection mixte, ou deux par genre |
-| Nom d'une collection mixte | `{0}` | `{0}` est remplacé par le genre |
-| Nom d'une collection de films / de séries | `{0} (Films)` / `{0} (Séries)` | Utilisés si films et séries sont séparés |
-| Nombre minimum de titres par genre | 3 | En dessous, pas de collection |
-| Genres exclus | Téléfilm, TV Movie | Ces genres n'ont jamais de collection |
+| Séparer films et séries | Désactivé | Une rangée mixte, ou deux par genre |
+| Titre d'une rangée de genre | `{0}` | `{0}` est remplacé par le genre |
+| Titre (films / séries séparés) | `{0} (Films)` / `{0} (Séries)` | Utilisés si films et séries sont séparés |
+| Nombre minimum de titres par genre | 3 | En dessous, le genre n'a pas de rangée |
+| Genres exclus | Téléfilm, TV Movie | Ces genres ne sont jamais utilisés |
 | Alias de genres | voir ci-dessous | Fusionne ou découpe des genres |
-| Supprimer les collections devenues inutiles | Activé | Supprime une collection de genre qui n'a plus assez de titres |
-| Bouton « Supprimer toutes les collections créées » | | Supprime d'un coup toutes les collections du plugin (pas celles faites à la main) |
+| Supprimer les sagas devenues inutiles | Activé | Supprime une saga qui n'a plus assez de films |
+| Bouton « Supprimer les collections créées » | | Supprime d'un coup les sagas créées par le plugin (pas tes collections faites à la main) |
 
 **Alias de genres.** Une règle par ligne, au format `Source=Cible` ou `Source=Cible1,Cible2`. Voici les règles par défaut :
 
@@ -119,7 +121,7 @@ Les sagas sont reconnues grâce aux métadonnées TMDb des films. Si tu as déj�
 | Position | Au-dessus | Au-dessus ou en dessous des rangées Jellyfin (« Reprendre », « À suivre »…) |
 | Nouveaux films / Séries avec de nouveaux épisodes | Activé | Rangées des nouveautés |
 | Tous les films / Toutes les séries | Activé | Toute la bibliothèque de A à Z ; le titre de la rangée ouvre la liste complète |
-| Collections par genre | Activé | Rangée listant toutes les collections de genre |
+| Genres | Activé | Une carte par genre, qui ouvre la page Jellyfin du genre |
 | Une rangée par genre | Activé | Une rangée de titres par genre |
 | Nombre maximum de rangées de genre | 6 | Limite le nombre de rangées de genre |
 | Genres à afficher en premier | vide | Ordre des rangées de genre. Les autres suivent, du plus fourni au moins fourni |
@@ -140,11 +142,11 @@ Pour afficher les rangées, le plugin ajoute une seule ligne `<script>` dans le 
   sudo chown jellyfin /usr/share/jellyfin/web/index.html
   ```
 
-Si l'écriture est impossible, un avertissement `Cannot write ... index.html` apparaît dans les logs. Les collections fonctionnent quand même. Pense aussi à vider le cache du navigateur (Ctrl + F5).
+Si l'écriture est impossible, un avertissement `Cannot write ... index.html` apparaît dans les logs. Les sagas fonctionnent quand même. Pense aussi à vider le cache du navigateur (Ctrl + F5).
 </details>
 
 <details>
-<summary><b>Un genre n'a pas de collection</b></summary>
+<summary><b>Un genre n'a pas de rangée</b></summary>
 
 Il faut au moins le nombre minimum de titres (3 par défaut), et le genre ne doit pas être dans la liste des exclus. Les genres viennent des métadonnées (TMDb, NFO…). Vérifie-les dans la fiche du film ou de la série.
 </details>
@@ -164,7 +166,7 @@ Non. Le plugin n'ajoute aucun CSS. Les rangées reprennent le style de ton thèm
 <details>
 <summary><b>Est-ce que mes collections faites à la main sont touchées ?</b></summary>
 
-Non. Le plugin ne gère que les collections qu'il a créées. Elles portent un identifiant interne `GenreCollections`, visible dans l'éditeur de métadonnées.
+Non. Le plugin ne gère que les sagas qu'il a créées. Elles portent un identifiant interne `GenreCollections`, visible dans l'éditeur de métadonnées.
 </details>
 
 ## Désinstallation

@@ -141,32 +141,43 @@ public class GenreCollectionsController : ControllerBase
                 .ToList();
         }
 
-        var collections = managed
-            .Where(b => !GenreCollectionService.IsSagaKey(b.ProviderIds[Plugin.ProviderKey]))
-            .Select(b => new CollectionRef
+        // Genres: computed from the library, not stored as collections (see GenreCollectionService.SyncInternalAsync).
+        var groups = _service.GetGenreIndex(config);
+        dto.Collections = groups
+            .Where(g => g.GenreId is not null)
+            .Select(g => new CollectionRef
             {
-                Id = b.Id.ToString("N", System.Globalization.CultureInfo.InvariantCulture),
-                Name = b.Name,
-                Count = b.GetLinkedChildren().Count(GenreCollectionService.IsOnDisk)
+                Id = g.GenreId!.Value.ToString("N", System.Globalization.CultureInfo.InvariantCulture),
+                Name = g.Name,
+                Count = g.ItemIds.Count
             })
-            .Where(c => c.Count > 0)
             .OrderBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
-        dto.Collections = collections;
 
         var pinned = GenreRules.SplitList(config.PinnedGenres).ToList();
-        int PinIndex(CollectionRef c)
+        int PinIndex(GenreGroup g)
         {
             var idx = pinned.FindIndex(p =>
-                string.Equals(p, c.Name, StringComparison.OrdinalIgnoreCase)
-                || c.Name.StartsWith(p + " ", StringComparison.OrdinalIgnoreCase));
+                string.Equals(p, g.Genre, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(p, g.Name, StringComparison.OrdinalIgnoreCase));
             return idx < 0 ? int.MaxValue : idx;
         }
 
-        dto.GenreRows = collections
+        // The client sorts and limits; send a bounded, shuffled sample so the request URL stays short.
+        dto.GenreRows = groups
             .OrderBy(PinIndex)
-            .ThenByDescending(c => c.Count)
+            .ThenByDescending(g => g.ItemIds.Count)
             .Take(Math.Max(0, config.MaxGenreRows))
+            .Select(g => new GenreRowRef
+            {
+                Name = g.Name,
+                GenreId = g.GenreId?.ToString("N", System.Globalization.CultureInfo.InvariantCulture),
+                ItemIds = g.ItemIds
+                    .OrderBy(_ => Random.Shared.Next())
+                    .Take(120)
+                    .Select(id => id.ToString("N", System.Globalization.CultureInfo.InvariantCulture))
+                    .ToList()
+            })
             .ToList();
 
         return dto;
@@ -216,15 +227,15 @@ public class GenreCollectionsController : ControllerBase
         /// <summary>Gets or sets every genre collection.</summary>
         public IReadOnlyList<CollectionRef> Collections { get; set; } = [];
 
-        /// <summary>Gets or sets the collections shown as rows.</summary>
-        public IReadOnlyList<CollectionRef> GenreRows { get; set; } = [];
+        /// <summary>Gets or sets the genres shown as rows.</summary>
+        public IReadOnlyList<GenreRowRef> GenreRows { get; set; } = [];
 
         /// <summary>Gets the row titles.</summary>
         public Dictionary<string, string> Labels { get; } = new()
         {
             ["LatestMovies"] = "Nouveaux films",
             ["LatestSeries"] = "Séries avec de nouveaux épisodes",
-            ["Collections"] = "Collections par genre",
+            ["Collections"] = "Genres",
             ["Sagas"] = "Films SAGA",
             ["AllMovies"] = "Tous les films",
             ["AllSeries"] = "Toutes les séries"
@@ -244,5 +255,20 @@ public class GenreCollectionsController : ControllerBase
 
         /// <summary>Gets or sets the number of items.</summary>
         public int Count { get; set; }
+    }
+
+    /// <summary>
+    /// A genre row: its title, native genre page and candidate titles.
+    /// </summary>
+    public class GenreRowRef
+    {
+        /// <summary>Gets or sets the row title.</summary>
+        public string Name { get; set; } = string.Empty;
+
+        /// <summary>Gets or sets the native genre id (row link), if any.</summary>
+        public string? GenreId { get; set; }
+
+        /// <summary>Gets or sets the candidate titles.</summary>
+        public IReadOnlyList<string> ItemIds { get; set; } = [];
     }
 }
