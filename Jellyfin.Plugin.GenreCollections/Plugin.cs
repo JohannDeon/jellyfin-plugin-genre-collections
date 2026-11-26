@@ -37,7 +37,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     public override Guid Id => Guid.Parse("51657d44-7198-4c95-b99d-afef3045fad9");
 
     /// <inheritdoc />
-    public override string Description => "Crée des collections par genre (films et séries) et ajoute des rangées sur l'écran d'accueil.";
+    public override string Description => "Classe films et séries par genre et par saga, et ajoute des rangées légères sur l'écran d'accueil.";
 
     /// <summary>
     /// Gets the current plugin instance.

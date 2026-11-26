@@ -105,6 +105,7 @@ public class GenreCollectionsController : ControllerBase
             ShowCollectionsRow = config.ShowCollectionsRow,
             ShowGenreRows = config.ShowGenreRows,
             ItemsPerSection = Math.Clamp(config.ItemsPerSection, 4, 60),
+            MinimumTitlesPerGenreRow = PluginConfiguration.MinimumTitlesPerGenreRow,
             GenreRowSort = config.GenreRowSort switch
             {
                 "DateCreated" => "DateCreated",
@@ -165,6 +166,7 @@ public class GenreCollectionsController : ControllerBase
 
         // The client sorts and limits; send a bounded, shuffled sample so the request URL stays short.
         dto.GenreRows = groups
+            .Where(g => g.ItemIds.Count >= PluginConfiguration.MinimumTitlesPerGenreRow)
             .OrderBy(PinIndex)
             .ThenByDescending(g => g.ItemIds.Count)
             .Take(Math.Max(0, config.MaxGenreRows))
@@ -214,6 +216,9 @@ public class GenreCollectionsController : ControllerBase
 
         /// <summary>Gets or sets the number of items per row.</summary>
         public int ItemsPerSection { get; set; }
+
+        /// <summary>Gets or sets the minimum number of titles a genre row needs to be shown.</summary>
+        public int MinimumTitlesPerGenreRow { get; set; }
 
         /// <summary>Gets or sets the sort of genre rows.</summary>
         public string GenreRowSort { get; set; } = "Random";

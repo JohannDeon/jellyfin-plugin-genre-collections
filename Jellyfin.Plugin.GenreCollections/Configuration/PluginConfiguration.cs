@@ -7,6 +7,11 @@ namespace Jellyfin.Plugin.GenreCollections.Configuration;
 /// </summary>
 public class PluginConfiguration : BasePluginConfiguration
 {
+    /// <summary>
+    /// A genre row needs at least this many titles to be shown on the home screen.
+    /// </summary>
+    public const int MinimumTitlesPerGenreRow = 5;
+
     // ---------- Collections ----------
 
     /// <summary>
@@ -120,7 +125,7 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether the "new movies" row is shown.
     /// </summary>
-    public bool ShowLatestMovies { get; set; } = true;
+    public bool ShowLatestMovies { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the "series with new episodes" row is shown.
@@ -130,12 +135,12 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets a value indicating whether the "all movies" row is shown.
     /// </summary>
-    public bool ShowAllMovies { get; set; } = true;
+    public bool ShowAllMovies { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the "all series" row is shown.
     /// </summary>
-    public bool ShowAllSeries { get; set; } = true;
+    public bool ShowAllSeries { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the row listing every genre collection is shown.
@@ -150,7 +155,7 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets the maximum number of genre rows on the home screen.
     /// </summary>
-    public int MaxGenreRows { get; set; } = 6;
+    public int MaxGenreRows { get; set; } = 4;
 
     /// <summary>
     /// Gets or sets genres shown first on the home screen (one per line or comma separated).
@@ -165,7 +170,7 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Gets or sets the number of items per row.
     /// </summary>
-    public int ItemsPerSection { get; set; } = 20;
+    public int ItemsPerSection { get; set; } = 16;
 
     /// <summary>
     /// Gets or sets a value indicating whether watched items are hidden from genre rows.

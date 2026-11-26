@@ -1,5 +1,6 @@
 using System.Linq;
 using Jellyfin.Plugin.GenreCollections.Configuration;
+using Jellyfin.Plugin.GenreCollections.Injection;
 using Jellyfin.Plugin.GenreCollections.Services;
 using Xunit;
 
@@ -52,23 +53,55 @@ public class GenreRulesTests
     }
 }
 
-public class WebClientInjectorTests
+public class IndexInjectionTests
 {
     private const string Html = "<html><body><div></div></body></html>";
 
     [Fact]
     public void AddsTagOnceBeforeBody()
     {
-        var once = WebClientInjector.AddTag(Html);
-        var twice = WebClientInjector.AddTag(once);
+        var once = IndexHtmlInjectionMiddleware.Inject(Html, "/jf");
+        var twice = IndexHtmlInjectionMiddleware.Inject(once, "/jf");
         Assert.Equal(once, twice);
-        Assert.EndsWith(WebClientInjector.ScriptTag + "</body></html>", once);
+        Assert.Contains("src=\"/jf/GenreCollections/ClientScript?v=", once);
+        Assert.EndsWith("</script></body></html>", once);
     }
 
     [Fact]
-    public void RemoveRestoresOriginal()
+    public void DoesNotDuplicateOldOnDiskTag()
     {
-        Assert.Equal(Html, WebClientInjector.RemoveTag(WebClientInjector.AddTag(Html)));
+        var old = Html.Replace("</body>", LegacyIndexCleanup.LegacyTag + "</body>");
+        Assert.Equal(old, IndexHtmlInjectionMiddleware.Inject(old, string.Empty));
+        Assert.Equal(Html, LegacyIndexCleanup.RemoveLegacyTag(old));
+    }
+
+    [Theory]
+    [InlineData("/web/", true, "")]
+    [InlineData("/web/index.html", true, "")]
+    [InlineData("/jellyfin/web/", true, "/jellyfin")]
+    [InlineData("/web/main.bundle.js", false, "")]
+    [InlineData("/Items", false, "")]
+    public void RecognisesIndexPage(string path, bool expected, string prefix)
+    {
+        Assert.Equal(expected, IndexHtmlInjectionMiddleware.TryGetPrefix(path, out var p));
+        Assert.Equal(prefix, p);
+    }
+}
+
+public class ConfigurationDefaultsTests
+{
+    [Fact]
+    public void HomeScreenIsLightByDefault()
+    {
+        var c = new PluginConfiguration();
+        Assert.False(c.ShowAllMovies);
+        Assert.False(c.ShowAllSeries);
+        Assert.False(c.ShowLatestMovies);
+        Assert.True(c.ShowLatestSeries);
+        Assert.True(c.ShowSagasRow);
+        Assert.Equal(4, c.MaxGenreRows);
+        Assert.Equal(16, c.ItemsPerSection);
+        Assert.Equal(5, PluginConfiguration.MinimumTitlesPerGenreRow);
     }
 }
 

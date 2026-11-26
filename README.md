@@ -21,11 +21,14 @@ Genre Collections classe automatiquement tes **films et séries par genre** (Hor
 
 - **Classement par genre** : chaque film et chaque série entière (jamais épisode par épisode) va dans **un seul genre**, le plus pertinent, à partir des métadonnées (TMDb, NFO…). Les genres des séries sont harmonisés avec ceux des films (« Action & Adventure » va dans Action et Aventure). Le classement se met à jour tout seul après chaque scan. Les genres ne sont **pas** des collections : ta bibliothèque de séries reste intacte, même avec l'option Jellyfin « Grouper dans les collections ».
 - **Sagas de films** : Harry Potter, Hunger Games, Le Seigneur des anneaux… chaque saga a sa collection avec son affiche officielle (TMDb), et une rangée « Films SAGA » en première ligne de l'accueil.
-- **Écran d'accueil** : rangées « Nouveaux films », « Séries avec de nouveaux épisodes », « Tous les films », « Toutes les séries », « Genres » et une rangée par genre (aléatoire, derniers ajoutés, mieux notés…).
+- **Écran d'accueil** : par défaut, « Films SAGA », « Séries avec de nouveaux épisodes », « Genres » et 4 rangées de genre. « Nouveaux films », « Tous les films » et « Toutes les séries » s'activent dans les réglages. Les rangées se chargent au fil du défilement et les affiches seulement quand elles arrivent à l'écran, pour ne pas surcharger un petit serveur ou un NAS.
+- **Compatible avec Theme Studio** : les rangées se placent juste avant les rangées Jellyfin, sous la bannière du thème.
 - **Compatible avec ton thème** : aucun CSS ajouté. Les rangées reprennent le style de ton thème (Abyss, etc.) comme les rangées natives.
 
 Fonctionne avec **Jellyfin 12.x**.
 
+> **Mise à jour vers la 1.4** : tes réglages actuels sont conservés. Pour un accueil plus léger, décoche « Nouveaux films », « Tous les films » et « Toutes les séries », et mets 4 rangées de genre et 16 titres par rangée. Le plugin ne modifie plus le fichier `index.html` : l'ancienne ligne est retirée au démarrage.
+>
 > **Mise à jour depuis la 1.2** : jusqu'ici, les genres étaient des collections Jellyfin. Avec l'option « Grouper dans les collections », les séries disparaissaient de la bibliothèque Séries et il devenait difficile d'ouvrir une saison ou un épisode. Depuis la 1.3, les anciennes collections de genre sont supprimées automatiquement à la première synchronisation, et seules les sagas restent des collections.
 
 ## Installation
@@ -119,14 +122,15 @@ Les sagas sont reconnues grâce aux métadonnées TMDb des films. Si tu as déj�
 | --- | --- | --- |
 | Ajouter des rangées sur l'écran d'accueil | Activé | Active ou coupe toutes les rangées |
 | Position | Au-dessus | Au-dessus ou en dessous des rangées Jellyfin (« Reprendre », « À suivre »…) |
-| Nouveaux films / Séries avec de nouveaux épisodes | Activé | Rangées des nouveautés |
-| Tous les films / Toutes les séries | Activé | Toute la bibliothèque de A à Z ; le titre de la rangée ouvre la liste complète |
+| Nouveaux films | Désactivé | Fait doublon avec la rangée Jellyfin « Derniers ajouts » |
+| Séries avec de nouveaux épisodes | Activé | Séries qui ont reçu des épisodes récemment |
+| Tous les films / Toutes les séries | Désactivé | Toute la bibliothèque de A à Z ; le titre de la rangée ouvre la liste complète |
 | Genres | Activé | Une carte par genre, qui ouvre la page Jellyfin du genre |
-| Une rangée par genre | Activé | Une rangée de titres par genre |
-| Nombre maximum de rangées de genre | 6 | Limite le nombre de rangées de genre |
+| Une rangée par genre | Activé | Une rangée de titres par genre (seulement les genres d'au moins 5 titres) |
+| Nombre maximum de rangées de genre | 4 | Limite le nombre de rangées de genre |
 | Genres à afficher en premier | vide | Ordre des rangées de genre. Les autres suivent, du plus fourni au moins fourni |
 | Ordre dans les rangées de genre | Aléatoire | Aléatoire, derniers ajoutés, mieux notés ou date de sortie |
-| Titres par rangée | 20 | Entre 4 et 60 |
+| Titres par rangée | 16 | Entre 4 et 60 |
 | Masquer les titres déjà vus | Désactivé | Dans les rangées de genre uniquement |
 
 ## Questions fréquentes
@@ -134,21 +138,17 @@ Les sagas sont reconnues grâce aux métadonnées TMDb des films. Si tu as déj�
 <details>
 <summary><b>Les rangées n'apparaissent pas sur l'accueil</b></summary>
 
-Pour afficher les rangées, le plugin ajoute une seule ligne `<script>` dans le fichier `index.html` du client web au démarrage de Jellyfin, et la retire à l'arrêt. Jellyfin doit donc pouvoir écrire dans ce fichier.
+Le plugin ajoute une ligne `<script>` à la page du client web au moment où elle est envoyée au navigateur. Aucun fichier n'est modifié sur le disque, donc ça marche aussi avec un dossier web en lecture seule (Docker).
 
-- **Docker (image officielle, lancée en root)** : rien à faire.
-- **Docker avec `--user`** ou **installation Linux** : donne les droits d'écriture à l'utilisateur de Jellyfin, par exemple :
-  ```bash
-  sudo chown jellyfin /usr/share/jellyfin/web/index.html
-  ```
-
-Si l'écriture est impossible, un avertissement `Cannot write ... index.html` apparaît dans les logs. Les sagas fonctionnent quand même. Pense aussi à vider le cache du navigateur (Ctrl + F5).
+- Vide le cache du navigateur (Ctrl + F5) après une mise à jour du plugin.
+- Vérifie que « Ajouter des rangées sur l'accueil » est coché dans les réglages du plugin.
+- Si tu passes par un client web hébergé ailleurs que sur le serveur Jellyfin, les rangées ne peuvent pas être ajoutées.
 </details>
 
 <details>
 <summary><b>Un genre n'a pas de rangée</b></summary>
 
-Il faut au moins le nombre minimum de titres (3 par défaut), et le genre ne doit pas être dans la liste des exclus. Les genres viennent des métadonnées (TMDb, NFO…). Vérifie-les dans la fiche du film ou de la série.
+Une rangée de genre demande au moins 5 titres, le genre doit faire partie des genres les plus fournis (4 rangées par défaut), et le genre ne doit pas être dans la liste des exclus. Les genres viennent des métadonnées (TMDb, NFO…). Vérifie-les dans la fiche du film ou de la série.
 </details>
 
 <details>
@@ -171,8 +171,8 @@ Non. Le plugin ne gère que les sagas qu'il a créées. Elles portent un identif
 
 ## Désinstallation
 
-1. **Tableau de bord → Extensions → Genre Collections → Désinstaller**, puis redémarre Jellyfin. La ligne ajoutée à `index.html` est retirée à l'arrêt du serveur.
-2. Les collections de genre restent. Pour les retirer, utilise **avant de désinstaller** le bouton « Supprimer toutes les collections créées » dans les paramètres du plugin.
+1. **Tableau de bord → Extensions → Genre Collections → Désinstaller**, puis redémarre Jellyfin. Aucun fichier du client web n'est modifié, il n'y a rien à nettoyer.
+2. Les collections de sagas restent. Pour les retirer, utilise **avant de désinstaller** le bouton « Supprimer toutes les collections créées » dans les paramètres du plugin.
 
 ## Compilation
 
