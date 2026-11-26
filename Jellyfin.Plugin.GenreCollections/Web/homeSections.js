@@ -1,8 +1,9 @@
 /*
  * Genre Collections - home screen rows.
  *
- * Adds rows to the Jellyfin web home screen (new movies, series with new episodes,
- * genre collections, one row per genre). It only reuses the web client's own markup
+ * Adds rows to the Jellyfin web home screen (sagas, series with new episodes, genres,
+ * one row per genre). Rows are loaded while scrolling and posters only when they come
+ * near the screen, so a small server or NAS is never asked for hundreds of images at once. It only reuses the web client's own markup
  * and CSS classes (verticalSection, emby-scroller, card, ...) and ships no CSS, so
  * the active theme (e.g. Abyss) styles the rows exactly like the native ones.
  */
@@ -66,7 +67,7 @@
         html += '<div class="cardPadder cardPadder-overflowPortrait"></div>';
         html += '<a href="' + url + '" data-action="link" class="cardImageContainer coveredImage cardContent itemAction"'
             + ' aria-label="' + name + '"'
-            + (img ? ' style="background-image:url(\'' + escapeHtml(img) + '\')"' : '') + '>';
+            + (img ? ' data-src="' + escapeHtml(img) + '"' : '') + '>';
         if (!img) {
             html += '<div class="cardText cardDefaultText">' + name + '</div>';
         }
@@ -105,6 +106,71 @@
         return html;
     }
 
+    // ---------- Network: at most MAX_PARALLEL item queries at a time ----------
+
+    var MAX_PARALLEL = 4;
+    var active = 0;
+    var waiting = [];
+
+    function limited(fn) {
+        return new Promise(function (resolve, reject) {
+            waiting.push(function () {
+                active++;
+                Promise.resolve().then(fn).then(resolve, reject).then(function () {
+                    active--;
+                    next();
+                });
+            });
+            next();
+        });
+    }
+
+    function next() {
+        while (active < MAX_PARALLEL && waiting.length) {
+            waiting.shift()();
+        }
+    }
+
+    // ---------- Posters: loaded only when they come near the screen ----------
+
+    var imageObserver = null;
+
+    function showImage(el) {
+        var src = el && el.getAttribute('data-src');
+        if (src) {
+            el.style.backgroundImage = "url('" + src.replace(/'/g, '%27') + "')";
+            el.removeAttribute('data-src');
+        }
+    }
+
+    function observeImages(root) {
+        var images = root.querySelectorAll('[data-src]');
+        if (!('IntersectionObserver' in window)) {
+            images.forEach(showImage);
+            return;
+        }
+        if (!imageObserver) {
+            imageObserver = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) {
+                        return;
+                    }
+                    imageObserver.unobserve(entry.target);
+                    showImage(entry.target);
+                    // Also prepare the next few posters of the row, so scrolling sideways does not show empty cards.
+                    var card = entry.target.closest('.card');
+                    for (var n = 0; card && n < 4; n++) {
+                        card = card.nextElementSibling;
+                        if (card) {
+                            showImage(card.querySelector('[data-src]'));
+                        }
+                    }
+                });
+            }, { rootMargin: '300px' });
+        }
+        images.forEach(function (el) { imageObserver.observe(el); });
+    }
+
     function fetchItems(apiClient, query) {
         var base = {
             Recursive: true,
@@ -127,7 +193,7 @@
                 }
             }
         }
-        return apiClient.getItems(apiClient.getCurrentUserId(), base)
+        return limited(function () { return apiClient.getItems(apiClient.getCurrentUserId(), base); })
             .then(function (result) { return (result && result.Items) || []; })
             .catch(function (err) {
                 console.warn('[GenreCollections] item query failed', err);
@@ -142,65 +208,65 @@
 
         // First row: movie sagas (Harry Potter, Hunger Games, ...), one poster per saga.
         if (config.Sagas && config.Sagas.length) {
-            jobs.push(fetchItems(apiClient, {
+            jobs.push(function () { return fetchItems(apiClient, {
                 Ids: config.Sagas.map(function (c) { return c.Id; }).join(','),
                 Recursive: false,
                 SortBy: 'SortName',
                 SortOrder: 'Ascending'
             }).then(function (items) {
                 return { title: config.Labels.Sagas, link: null, items: items };
-            }));
+            }); });
         }
 
         if (config.ShowLatestMovies) {
-            jobs.push(fetchItems(apiClient, {
+            jobs.push(function () { return fetchItems(apiClient, {
                 IncludeItemTypes: 'Movie',
                 SortBy: 'DateCreated,SortName',
                 SortOrder: 'Descending',
                 Limit: limit
             }).then(function (items) {
                 return { title: config.Labels.LatestMovies, link: null, items: items };
-            }));
+            }); });
         }
 
         if (config.ShowLatestSeries) {
-            jobs.push(fetchItems(apiClient, {
+            jobs.push(function () { return fetchItems(apiClient, {
                 IncludeItemTypes: 'Series',
                 SortBy: 'DateLastContentAdded,SortName',
                 SortOrder: 'Descending',
                 Limit: limit
             }).then(function (items) {
                 return { title: config.Labels.LatestSeries, link: null, items: items };
-            }));
+            }); });
         }
 
         // Whole library, A to Z; the title opens the full list.
         if (config.ShowAllMovies) {
-            jobs.push(fetchItems(apiClient, {
+            jobs.push(function () { return fetchItems(apiClient, {
                 IncludeItemTypes: 'Movie',
                 SortBy: 'SortName',
                 SortOrder: 'Ascending',
                 Limit: limit
             }).then(function (items) {
                 return { title: config.Labels.AllMovies, link: '#/list?type=Movie&serverId=' + encodeURIComponent(serverId), items: items };
-            }));
+            }); });
         }
 
         if (config.ShowAllSeries) {
-            jobs.push(fetchItems(apiClient, {
+            jobs.push(function () { return fetchItems(apiClient, {
                 IncludeItemTypes: 'Series',
                 SortBy: 'SortName',
                 SortOrder: 'Ascending',
                 Limit: limit
             }).then(function (items) {
                 return { title: config.Labels.AllSeries, link: '#/list?type=Series&serverId=' + encodeURIComponent(serverId), items: items };
-            }));
+            }); });
         }
 
         if (config.ShowCollectionsRow && config.Collections.length) {
             var ids = config.Collections.map(function (c) { return c.Id; }).join(',');
             // Native Jellyfin genres: each card opens the genre page (its movies and series).
-            jobs.push(fetchItems(apiClient, {
+            jobs.push(function () { return fetchItems(apiClient, {
                 Ids: ids,
                 Recursive: false,
                 IsMissing: null,
@@ -209,7 +275,7 @@
                 SortOrder: 'Ascending'
             }).then(function (items) {
                 return { title: config.Labels.Collections, link: null, items: items };
-            }));
+            }); });
         }
 
         if (config.ShowGenreRows) {
@@ -230,17 +296,18 @@
                 if (config.HideWatchedInGenreRows) {
                     query.IsPlayed = false;
                 }
-                jobs.push(fetchItems(apiClient, query).then(function (items) {
+                jobs.push(function () { return fetchItems(apiClient, query).then(function (items) {
                     return {
                         title: genre.Name,
                         link: genre.GenreId ? '#/details?id=' + encodeURIComponent(genre.GenreId) + '&serverId=' + encodeURIComponent(serverId) : null,
-                        items: items
+                        // Too few titles left (e.g. all watched): no row.
+                        items: items.length >= (config.MinimumTitlesPerGenreRow || 0) ? items : []
                     };
-                }));
+                }); });
             });
         }
 
-        return Promise.all(jobs);
+        return jobs;
     }
 
     function getHomeTab() {
@@ -269,6 +336,118 @@
         return container;
     }
 
+    // ---------- Rendering: first rows at once, the others while scrolling ----------
+
+    var FIRST_ROWS = 3;
+    var ROWS_PER_STEP = 2;
+    var state = null;
+
+    function idsOf(items) {
+        return items.map(function (i) { return i.Id; }).join(',');
+    }
+
+    // Fills one row slot; keeps the DOM as is when the row did not change (no jump on refresh).
+    function loadSlot(apiClient, slot, load) {
+        slot.loading = true;
+        return load().then(function (s) {
+            var signature = s.title + '|' + (s.link || '') + '|' + idsOf(s.items);
+            if (slot.getAttribute('data-signature') !== signature) {
+                slot.innerHTML = s.items.length ? sectionHtml(apiClient, s.title, s.link, s.items) : '';
+                slot.setAttribute('data-signature', signature);
+                observeImages(slot);
+            }
+            slot.loaded = true;
+        }).catch(function (err) {
+            console.warn('[GenreCollections] row failed', err);
+        }).then(function () {
+            slot.loading = false;
+        });
+    }
+
+    function loadMore() {
+        if (!state) {
+            return Promise.resolve();
+        }
+        var current = state;
+        var pending = [];
+        for (var i = 0; i < current.slots.length && pending.length < ROWS_PER_STEP; i++) {
+            var slot = current.slots[i];
+            if (!slot.loaded && !slot.loading) {
+                pending.push(loadSlot(current.apiClient, slot, current.loads[i]));
+            }
+        }
+        if (!pending.length) {
+            if (current.observer) {
+                current.observer.disconnect();
+            }
+            return Promise.resolve();
+        }
+        return Promise.all(pending).then(function () {
+            // Re-observing fires again at once if the end of the rows is still near the screen.
+            if (state === current && current.observer) {
+                current.observer.unobserve(current.sentinel);
+                current.observer.observe(current.sentinel);
+            }
+        });
+    }
+
+    function renderInto(container, apiClient, loads, refresh) {
+        if (state && state.observer) {
+            state.observer.disconnect();
+        }
+
+        // One slot per row, reused when refreshing so that unchanged rows stay in place.
+        var slots = Array.prototype.slice.call(container.querySelectorAll(':scope > .genreCollectionsSlot'));
+        while (slots.length > loads.length) {
+            slots.pop().remove();
+        }
+        var sentinel = container.querySelector(':scope > .genreCollectionsSentinel');
+        if (!sentinel) {
+            sentinel = document.createElement('div');
+            sentinel.className = 'genreCollectionsSentinel';
+            container.appendChild(sentinel);
+        }
+        while (slots.length < loads.length) {
+            var slot = document.createElement('div');
+            slot.className = 'genreCollectionsSlot';
+            container.insertBefore(slot, sentinel);
+            slots.push(slot);
+        }
+
+        state = { apiClient: apiClient, slots: slots, loads: loads, sentinel: sentinel, observer: null };
+
+        var first = [];
+        slots.forEach(function (slot, i) {
+            if (i < FIRST_ROWS || (refresh && slot.loaded)) {
+                slot.loaded = false;
+                first.push(loadSlot(apiClient, slot, loads[i]));
+            } else if (!refresh) {
+                slot.loaded = false;
+            }
+        });
+
+        if ('IntersectionObserver' in window) {
+            var current = state;
+            current.observer = new IntersectionObserver(function (entries) {
+                if (entries.some(function (e) { return e.isIntersecting; }) && state === current) {
+                    loadMore();
+                }
+            }, { rootMargin: '600px' });
+            Promise.all(first).then(function () {
+                if (state === current) {
+                    current.observer.observe(sentinel);
+                }
+            });
+        } else {
+            slots.forEach(function (slot, i) {
+                if (i >= FIRST_ROWS) {
+                    loadSlot(apiClient, slot, loads[i]);
+                }
+            });
+        }
+        return Promise.all(first);
+    }
+
     function render(force) {
         var apiClient = getApiClient();
         var homeTab = getHomeTab();
@@ -289,17 +468,10 @@
                     }
                     return null;
                 }
-                return buildSections(apiClient, config).then(function (sections) {
-                    var html = '';
-                    sections.forEach(function (s) {
-                        if (s.items.length) {
-                            html += sectionHtml(apiClient, s.title, s.link, s.items);
-                        }
-                    });
-                    var container = ensureContainer(homeTab, config.Position);
-                    container.innerHTML = html;
-                    lastRender = Date.now();
-                });
+                var container = ensureContainer(homeTab, config.Position);
+                var refresh = !!container.querySelector('.genreCollectionsSlot');
+                lastRender = Date.now();
+                return renderInto(container, apiClient, buildSections(apiClient, config), refresh);
             })
             .catch(function (err) {
                 console.warn('[GenreCollections] unable to render home sections', err);
